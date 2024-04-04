@@ -1,7 +1,11 @@
+
+
+
+
+-- vim.wo.numberwidth = 0
+--
 local cmd = vim.cmd
--- Set options (global/buffer/windows-scoped)
 local opt = vim.opt
--- Global variables
 local g = vim.g
 local s = vim.s
 local indent = 4
@@ -9,6 +13,11 @@ local indent = 4
 cmd([[
 	filetype plugin indent on
 ]])
+
+
+vim.g.loaded_python3_provider = 0
+vim.o.termguicolors = true
+vim.opt.guicursor = "n:block"
 
 opt.backspace = { "eol", "start", "indent" } -- allow backspacing over everything in insert mode
 opt.clipboard = "unnamedplus"              -- allow neovim to access the system clipboard
@@ -48,13 +57,13 @@ opt.listchars = {
 }
 
 -- Hide cmd line
-opt.cmdheight = 0      -- more space in the neovim command line for displaying messages
+opt.cmdheight = 1      -- more space in the neovim command line for displaying messages
 
 opt.mouse = "a"        -- allow the mouse to be used in neovim
 opt.number = true      -- set numbered lines
 opt.scrolloff = 18     -- minimal number of screen lines to keep above and below the cursor
 opt.sidescrolloff = 3  -- minimal number of screen columns to keep to the left and right (horizontal) of the cursor if wrap is `false`
-opt.signcolumn = "yes" -- always show the sign column, otherwise it would shift the text each time
+opt.signcolumn = "no" -- always show the sign column, otherwise it would shift the text each time
 opt.splitbelow = true  -- open new split below
 opt.splitright = true  -- open new split to the right
 opt.wrap = false       -- display a long line
@@ -107,6 +116,6 @@ for _, plugin in pairs(disabled_built_ins) do
   g["loaded_" .. plugin] = 1
 end
 
--- Colorscheme
--- By default, use rose-pine
- 
+
+opt.statusline = "%f"
+opt.cursorline = false

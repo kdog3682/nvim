@@ -497,9 +497,9 @@ ls.add_snippets("all", {
 	key = "all",
 })
 
-ls.add_snippets("java", {
+ls.add_snippets("typst", {
 	-- Very long example for a java class.
-	s("fn", {
+	s("xxx", {
 		d(6, jdocsnip, { 2, 4, 5 }),
 		t({ "", "" }),
 		c(1, {
@@ -535,7 +535,7 @@ ls.add_snippets("java", {
 	key = "java",
 })
 
-ls.add_snippets("tex", {
+ls.add_snippets("all", {
 	-- rec_ls is self-referencing. That makes this snippet 'infinite' eg. have as many
 	-- \item as necessary by utilizing a choiceNode.
 	s("ls", {
@@ -557,4 +557,7 @@ ls.add_snippets("all", {
 	type = "autosnippets",
 	key = "all_auto",
 })
+
+
+
 
