@@ -106,10 +106,17 @@ return {
 					end
 				end, { "i", "s" }),
 			},
-			sources = { {
-				name = "luasnip",
-			}
- },
+			sources = {
+                {
+					name = "luasnip",
+                },
+				{
+					name = "buffer",
+					option = {
+						keyword_pattern = [[\k\+]],
+					},
+				},
+			},
 		}
 
 		return options

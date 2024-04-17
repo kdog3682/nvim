@@ -1,18 +1,10 @@
-
-
-
-
--- vim.wo.numberwidth = 0
---
 local cmd = vim.cmd
 local opt = vim.opt
 local g = vim.g
 local s = vim.s
 local indent = 4
 
-cmd([[
-	filetype plugin indent on
-]])
+-- cmd([[ filetype plugin indent on ]])
 
 
 vim.g.loaded_python3_provider = 0
@@ -36,7 +28,7 @@ opt.tabstop = indent     -- insert 2 spaces for a tab
 opt.shiftround = true    -- use multiple of shiftwidth when indenting with "<" and ">"
 
 -- search
-opt.hlsearch = true   -- highlight all matches on previous search pattern
+opt.hlsearch = false   -- highlight all matches on previous search pattern
 opt.ignorecase = true -- ignore case in search patterns
 opt.smartcase = true  -- smart case
 opt.wildignore = opt.wildignore + { "*/node_modules/*", "*/.git/*", "*/vendor/*" }
@@ -48,13 +40,13 @@ opt.laststatus = 2    -- only the last window will always have a status line
 opt.lazyredraw = true -- don"t update the display while executing macros
 opt.list = true
 -- You can also add "space" or "eol", but I feel it"s quite annoying
-opt.listchars = {
-  tab = "┊ ",
-  trail = "·",
-  extends = "»",
-  precedes = "«",
-  nbsp = "×"
-}
+-- opt.listchars = {
+  -- tab = "┊ ",
+  -- trail = "·",
+  -- extends = "»",
+  -- precedes = "«",
+  -- nbsp = "×"
+-- }
 
 -- Hide cmd line
 opt.cmdheight = 1      -- more space in the neovim command line for displaying messages
@@ -118,4 +110,65 @@ end
 
 
 opt.statusline = "%f"
+
+
+-- Ignore compiled files
+opt.wildignore = "__pycache__"
+opt.wildignore:append { "*.o", "*~", "*.pyc", "*pycache*" }
+opt.wildignore:append { "Cargo.lock", "Cargo.Bazel.lock" }
+
+-- Cool floating window popup menu for completion on command line
+-- opt.pumblend = 17
+-- opt.wildmode = "longest:full"
+-- opt.wildoptions = "pum"
+-- maybe delete this
+
+-- opt.showmode = false -- dunno what this does
+-- opt.showcmd = true -- i dunno what this does
+opt.cmdheight = 1 -- Height of the command bar
+opt.incsearch = false -- maybe remove this
+opt.incsearch = true -- Makes search act like search in modern browsers
+-- opt.showmatch = true -- show matching brackets when text indicator is over them
+opt.relativenumber = false -- Show line numbers
+opt.number = true -- But show the actual number for the line we're on
+opt.ignorecase = true -- Ignore case when searching...
+opt.smartcase = true -- ... unless there is a capital letter in the query
+opt.hidden = false
+opt.hidden = true -- you can leave the file without saving
+opt.hlsearch = false
+
+-- opt.equalalways = false -- I don't like my windows changing all the time
+-- opt.splitright = true -- Prefer windows splitting to the right
+-- opt.splitbelow = true -- Prefer windows splitting to the bottom
+-- opt.updatetime = 1000 -- Make updates happen faster
+-- opt.scrolloff = 10 -- Make it so there are always ten lines below my cursor
+
+
+
+-- Tabs
+opt.autoindent = true
+opt.cindent = true
+opt.wrap = true
+
+opt.tabstop = 4
+opt.shiftwidth = 4
+opt.softtabstop = 4
+opt.expandtab = true
+
+opt.breakindent = true
+opt.showbreak = string.rep(" ", 3) -- Make it so that long lines wrap smartly
+opt.linebreak = true
+
+-- opt.foldmethod = "marker"
+-- opt.foldlevel = 0
+-- opt.modelines = 1
+-- opt.belloff = "all" -- Just turn the dang bell off
+-- opt.clipboard = "unnamedplus"
+
+opt.inccommand = "split"
+opt.swapfile = false -- Living on the edge
+
+opt.mouse = "a"
+
+opt.formatoptions = ''
 opt.cursorline = false

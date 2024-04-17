@@ -39,27 +39,38 @@ local autocmd = vim.api.nvim_create_autocmd -- Create autocommand
     -- command = ":silent lua vim.lsp.buf.format()"
 -- })
 
+-- I want new lines to be auto-commented
 -- Don"t auto commenting new lines
-autocmd("BufEnter", {
-    pattern = "",
-    command = "set fo-=c fo-=r fo-=o"
-})
+-- autocmd("BufEnter", {
+    -- pattern = "",
+    -- command = "set fo-=c fo-=r fo-=o"
+-- })
 
-autocmd("Filetype", {
-    pattern = {"xml", "html", "xhtml", "css", "scss", "javascript", "typescript", "yaml", "lua"},
-    command = "setlocal shiftwidth=2 tabstop=2"
-})
+-- I dont want these languages to be modified
+-- autocmd("Filetype", {
+    -- pattern = {"xml", "html", "xhtml", "css", "scss", "javascript", "typescript", "yaml", "lua"},
+    -- command = "setlocal shiftwidth=2 tabstop=2"
+-- })
 
+-- i dont know what this does
 -- Set colorcolumn
-autocmd("Filetype", {
-    pattern = {"python", "rst", "c", "cpp"},
-    command = "set colorcolumn=80"
-})
+-- autocmd("Filetype", {
+    -- pattern = {"python", "rst", "c", "cpp"},
+    -- command = "set colorcolumn=80"
+-- })
+
+-- autocmd("Filetype", {
+    -- pattern = {"gitcommit", "markdown", "text"},
+    -- callback = function()
+        -- vim.opt_local.wrap = true
+        -- vim.opt_local.spell = true
+    -- end
+-- })
+
 
 autocmd("Filetype", {
-    pattern = {"gitcommit", "markdown", "text"},
+    pattern = { "sql" },
     callback = function()
-        vim.opt_local.wrap = true
-        vim.opt_local.spell = true
+        -- insertion123
     end
 })

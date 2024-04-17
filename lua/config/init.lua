@@ -75,15 +75,19 @@ require("lazy").setup({
 local modules = {
 	"config.autocmds",
 	"config.options",
-	"config.keymaps",
-	"config.more.snippets",
-	"config.more.keymaps",
-	"config.snippets.lua",
+    "config.more.lua",
+
+    -- "config.more.snippets",
+    -- "config.snippets.lua",
+    -- "config.snippets.test",
+    -- "config.more.lua",
+    -- "config.keymaps",
+    -- "config.more.keymaps",
 }
 
 for _, mod in ipairs(modules) do
 	local ok, err = pcall(require, mod)
-	if not ok and not mod == "config/custom" then
+	if not ok then
 		error(("Error loading %s...\n\n%s"):format(mod, err))
 	end
 end

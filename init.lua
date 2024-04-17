@@ -1,32 +1,19 @@
 vim.g.mapleader = ","
-
-
 vim.cmd('set nohlsearch')
 
 
-function endsWith(str, ending)
-	return ending == "" or str:sub(-#ending) == ending -- hi
+function noremap(key, expr)
+  vim.keymap.set('n', key, expr, { noremap = true, silent = true})
 end
 
-function noremap(key, value)
-	cmd = ""
-	if endsWith(value, ")") then
-		cmd = ":lua " .. value
-	else
-		cmd = ":" .. value
-	end
-	cmd = cmd .. "<CR>"
-
-	vim.api.nvim_set_keymap("n", key, cmd, { noremap = true, silent = true })
-end
 
 -----------------------------
 -----------------------------
 -----------------------------
 
-noremap("kl", "ToggleSyntax()")
-noremap("la", "Lazy")
-noremap("bd", "bd")
+-- noremap("kl", "ToggleSyntax()")
+-- noremap("la", "Lazy")
+-- noremap("bd", ":bd<CR>")
 vim.keymap.set("n", "x", '"_x')
 
 vim.opt.guicursor = "n:block"
@@ -46,7 +33,17 @@ vim.opt.showcmd = false
 vim.opt.ruler = false
 vim.opt.signcolumn = "no"
 vim.api.nvim_set_keymap("n", "s", ":update<CR>", { noremap = true, silent = false })
-vim.cmd("autocmd! BufWritePost $MYVIMRC source $MYVIMRC")
+-- vim.cmd("autocmd! BufWritePost $MYVIMRC source $MYVIMRC")
+local group = vim.api.nvim_create_augroup("kdog3682", { clear = true })
+
+function lua_bufwrite_callback()
+    local bufname = vim.api.nvim_buf_get_name(0)
+    -- local ft = get_filetype(bufname)
+     -- print(bufname)
+    execute("source", bufname)
+end
+vim.api.nvim_create_autocmd("BufWritePost", {group = group, callback = lua_bufwrite_callback, pattern = {"lua"}})
+-- vim.api.nvim_create_autocmd("FileType", group = group, callback = filetype_callback)
 
 -----------------------------
 -----------------------------
@@ -294,7 +291,7 @@ local comment_delimiters = {
 -- Function to print all contents of a table
 local function print_table_contents(tbl)
 	for key, value in pairs(tbl) do
-		print(key, value)
+		print(key, ': ', value)
 	end
 end
 
@@ -305,14 +302,6 @@ local function reload_neovim()
 end
 vim.api.nvim_set_keymap("n", "<Leader>rr", ":lua reload_neovim()<CR>", { noremap = true, silent = true })
 
--- require("~/.config/nvim/lua/kdog3682/locals/grayscale/init.lua")
-
--- Call the reload_neovim function to restart Neovim
-
--- reload_neovim()
---
-
--- Define a function to prompt the user to select an item from a list
 function select_item(items)
 	local selected_index = vim.ui.select(items)
 	print(selected_index)
@@ -397,16 +386,6 @@ local function _add_keymap_and_append(key, mapping)
 	print("Command appended to file:", mapping)
 end
 
--- require("luasnip.loaders.from_vscode").load({paths = '~/.config/nvim/lua/kdog3682/locals/friendly-snippets'})
-
--- Map "b" to jump backward in the jump list
-vim.cmd("nnoremap <silent> h <C-i>")
-
--- Map "h" to jump forward in the jump list
-vim.cmd("nnoremap <silent> b <C-o>")
---require('/mnt/chromeos/MyFiles/Downloads/snippets.lua')
-
--- require("kdog3682.luasnip-config")
 
 function reload_vim()
     vim.cmd("source ~/.config/nvim/init.lua")
@@ -435,16 +414,11 @@ function ToggleComment()
     end
 end
 
-function noremap(key, expr)
-  vim.api.nvim_set_keymap('n', key, expr, { noremap = true, silent = true})
-end
 vim.o.numberwidth = 2  -- Adjust to your preference
 
 
 
 
-
--- %snoremap('')
 
 -- Function to write the current TreeSitter tree to a JSON file
 local function ExportTreeAsJSON2()
@@ -484,23 +458,12 @@ end
 
 
 
-noremap('c', '<cmd> lua ToggleComment()<CR>')
--- noremap('<leader>e', '<cmd> lua ExportTreeAsJSON2()<CR>')
-noremap('f', 'dd')
-noremap('r', '<c-r>')
 
 
 
 
--- Define a function to source a file
-local function source_file(file_path)
-	-- Execute the commands in the file using :source
-	vim.api.nvim_command("source " .. file_path)
-end
 
--- Define a custom command to source a file using LeaderF
 
--- noremap(',sf', 'source_fie')
 vim.keymap.set("n", "\\", function()
 	local line = vim.fn.getline(".")
 	local col = vim.fn.col(".")
@@ -550,7 +513,7 @@ function get_filetype(file)
   if not file then
     return vim.bo.filetype
   else
-    return 'a'
+    return 'todo!'
   end
 end
 function prettier()
@@ -560,17 +523,20 @@ end
 function reloader()
     vim.cmd("Lazy reload " .. vim.g.plugin)
 end
-vim.g.dir = '~/.config/nvim/lua'
-vim.g.plugin = 'fzf-lua'
 vim.keymap.set("n", "<c-p>", ":FzfLua oldfiles resume = true<CR>", { silent = true })
 vim.keymap.set("n", "P", prettier, { silent = true })
--- vim.keymap.set("n", "<leader>r", reloader, { silent = true })
+vim.keymap.set("n", "<leader><leader>r", reloader, { silent = true })
+local function anything_handler(s)
+    local fn = get_filetype()
+    print(fn())
+end
+
+
+vim.keymap.set("n", ";", ":lua anything_handler('')<LEFT><LEFT>")
 
 
 M = require("stdlib.meta")
 
--- vim.keymap.set("n", "<leader>m", "lua M.view_mappings()<CR>", { silent = true })
--- vim.keymap.set("n", "<leader>m", "<cmd> lua M.view_mappings()<CR>", { silent = true })
 vim.keymap.set("n", "<leader>r", "diwi", { silent = true, noremap = true })
 vim.keymap.set("n", "wa", ":wa<CR>", { silent = true, noremap = true })
 vim.keymap.set("n", "<leader>m", "<cmd> lua M.view_mappings()<CR>", { silent = false, noremap = true })
@@ -633,10 +599,10 @@ vim.o.statusline = '%!v:lua.statusline()'
 vim.o.laststatus = 2
 
 function open(file_path)
-  vim.api.nvim_command("edit " .. file_path)
+  vim.api.nvim_command("edit! " .. file_path)
   end
-function open_buffer()
-  local file_path = "~/abc.typ"
+function open_buffer(file_path)
+  local file_path = file_path or "~/abc.typ"
   open(file_path)
 end
 
@@ -645,6 +611,8 @@ function open_prev_buffer()
   open(file_path)
 end
 
+vim.keymap.set("i", "_", "-")
+vim.keymap.set("i", "-", "_")
 vim.keymap.set("n", "\\", function()
 	local line = vim.fn.getline(".")
     local col = vim.fn.col(".")
@@ -652,6 +620,13 @@ vim.keymap.set("n", "\\", function()
     require("fzf-lua").fzf_exec({"a", "b"})
 end, {noremap = true})
 
+function execute(cmd)
+    print('CMD:', cmd)
+    vim.api.nvim_command(cmd)
+end
+function resourcer()
+    execute("source", vim.g.source_file)
+end
 vim.api.nvim_create_user_command(
     'Upper',
     function(opts)
@@ -661,10 +636,125 @@ vim.api.nvim_create_user_command(
 )
 
 
-vim.keymap.set("n", "\\", open_buffer, {noremap = true, silent = true})
-vim.keymap.set("n", "=", open_prev_buffer, {noremap = true, silent = true})
-vim.keymap.set("n", "<leader><leader>s", "<cmd> source ~/.config/nvim/lua/config/more/snippets.lua<CR>", {noremap = true, silent = true})
+noremap('<leader><leader>e', ExportTreeAsJSON2)
+noremap('f', 'dd')
+noremap('r', '<c-r>')
+noremap('\\', open_buffer)
+noremap('=', open_prev_buffer)
+noremap('3', "#")
+noremap('b', "<c-o>")
+noremap('h', "<c-i>")
+noremap("q", ":q<cr>")
+noremap("<leader><leader>r", resourcer)
+
+vim.g.plugin = 'fzf-lua'
+vim.g.dir = '~/.config/nvim/lua'
+vim.g.source_file = '~/.config/nvim/lua/config/snippets/test.lua'
+vim.g.source_file = '~/.config/nvim/lua/config/init.lua'
+vim.g.source_file = '~/.config/nvim/lua/config/options.lua'
+vim.g.source_file = '~/.config/nvim/lua/config/more/lua.lua'
+vim.g.vim_file = '~/.config/nvim/init.lua'
+vim.g.typst_file = '~/abc.typ'
+vim.g.plugin = 'nvim-grey'
+vim.g.plugin = 'nvim-treesitter'
+
+local function count_params(fn)
+    local info = debug.getinfo(fn, "u")
+    return info.nparams
+end
 
 
-vim.cmd([[autocmd! BufRead,BufNewFile,BufEnter *.typ set filetype=typst ]])
+local function fast_command(key, cmd)
+    noremap("<leader><leader>" .. key, ':' .. cmd .. '<CR>')
+end
+local function fastfile(key, file)
+    local function func()
+        open_buffer(file)
+    end
+    noremap(key, func)
+end
 
+
+vim.g.ts_file = '~/my-vitesse-app/src/main.ts'
+vim.g.vue_file = '~/my-vitesse-app/src/main.ts'
+vim.g.clip_file = '~/2023/clip.js'
+fastfile('esf', vim.g.source_file)
+fastfile('evf', vim.g.vim_file)
+fastfile('evu', vim.g.vue_file)
+fastfile('evc', vim.g.clip_file)
+fastfile('etf', vim.g.typst_file)
+function inoremap(key, expr)
+    vim.keymap.set('i', key, expr, { expr = true, noremap = true, silent = true})
+end
+
+function get_current_buffer()
+    return vim.fn.expand('%')
+end
+function get_prev_buffer()
+    return vim.fn.expand('#')
+end
+
+function get_current_buffer_directory()
+    return vim.fn.fnamemodify(vim.fn.expand("%"), ":h")
+end
+function get_prev_buffer_directory()
+    return vim.fn.fnamemodify(vim.fn.expand("%"), ":h")
+end
+inoremap('qg3', get_prev_buffer)
+inoremap('qgd3', get_prev_buffer_directory)
+inoremap('qgd4', get_current_buffer_directory)
+inoremap('qg4', get_current_buffer)
+
+
+vim.filetype.add({
+  pattern = {
+    ["%.typ$"] = "typst", -- Associate files with .abc.def.js extension with the typst filetype
+    ["%.xyz%.js$"] = "typst", -- Associate files with .xyz.js extension with the typst filetype
+  },
+  extension = {
+    typ = "typst", -- Associate .typ files with the typst filetype
+  },
+})
+
+
+function prompt_for_input()
+    prompt = "prompting for input"
+    function callback(answer)
+        return answer
+    end
+    local input = vim.ui.input({prompt = prompt}, callback)
+end
+
+fast_command("t", "InspectTree")
+fast_command("m", "messages")
+
+function eval(s)
+    return vim.fn.eval(s)
+end
+
+
+function isfile(x)
+    return vim.fn.isfile(x)
+end
+function isdir(x)
+    return vim.fn.isdirectory(x)
+end
+function git_push_directory(dir)
+    vim.fn.chdir(dir)
+    vim.fn.system('git', 'add .')
+    vim.fn.system('git', 'commit', '-m pushing"')
+    vim.fn.system('git', 'push')
+    -- execute '!open ' . shellescape(expand('<cfile>'), 1
+end
+-- git_push_directory("/home/kdog3682/.config/nvim")
+
+
+function run_python_function(key, arg)
+  vim.fn.system({'python3', '~/PYTHON/run.py', key, arg})
+end
+function open_file(file)
+    local file = file or vim.fn.expand("%")
+    print(file)
+    run_python_function("ofile", file)
+end
+vim.keymap.set('n', '<leader>o', open_file)

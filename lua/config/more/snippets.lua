@@ -20,6 +20,7 @@ local fmta = require("luasnip.extras.fmt").fmta
 local types = require("luasnip.util.types")
 local conds = require("luasnip.extras.conditions")
 local conds_expand = require("luasnip.extras.conditions.expand")
+local parser = ls.parser.parse_snippet
 
 -- If you're reading this file for the first time, best skip to around line 190
 -- where the actual snippet-definitions start.
