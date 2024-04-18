@@ -127,7 +127,7 @@ opt.wildignore:append { "Cargo.lock", "Cargo.Bazel.lock" }
 -- opt.showcmd = true -- i dunno what this does
 opt.cmdheight = 1 -- Height of the command bar
 opt.incsearch = false -- maybe remove this
-opt.incsearch = true -- Makes search act like search in modern browsers
+opt.incsearch = false -- Makes search act like search in modern browsers
 -- opt.showmatch = true -- show matching brackets when text indicator is over them
 opt.relativenumber = false -- Show line numbers
 opt.number = true -- But show the actual number for the line we're on
@@ -170,5 +170,12 @@ opt.swapfile = false -- Living on the edge
 
 opt.mouse = "a"
 
-opt.formatoptions = ''
+opt.formatoptions=''
+-- opt.formatoptions:remove('cro')
+-- command = "set fo-=c fo-=r fo-=o"
+--
 opt.cursorline = false
+
+
+-- vim.cmd('set nohlsearch')
+-- vim.cmd('set fo-=c fo-=r fo -=o')

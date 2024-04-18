@@ -1,3 +1,8 @@
+local luasnip_config_opts = {
+	history = true,
+	updateevents = "TextChanged,TextChangedI",
+	store_selection_keys = "<Tab>",
+}
 return {
 	"hrsh7th/nvim-cmp",
 	event = "InsertEnter",
@@ -6,12 +11,8 @@ return {
 			-- snippet plugin
 			"L3MON4D3/LuaSnip",
 			dependencies = "rafamadriz/friendly-snippets",
-			opts = {
-				history = true,
-				updateevents = "TextChanged,TextChangedI",
-			},
 			config = function(_, opts)
-				require("luasnip").config.set_config(opts)
+				require("luasnip").config.set_config(luasnip_config_opts)
 
 				vim.api.nvim_create_autocmd("InsertLeave", {
 					callback = function()
@@ -31,6 +32,9 @@ return {
 			"hrsh7th/cmp-nvim-lsp",
 			"hrsh7th/cmp-buffer",
 			"hrsh7th/cmp-path",
+			{
+				dir = "/home/kdog3682/.config/nvim/lua/local-plugins/cmp-calc",
+			},
 		},
 	}, -- cmp sources plugins
 	opts = function()
@@ -50,12 +54,14 @@ return {
 		end
 
 		local options = {
+			enable_autosnippets = true,
 			completion = {
 				completeopt = "menu,menuone",
 				completion = { completeopt = "menu,menuone,noinsert" },
 			},
 
 			window = {
+				max_entries = 8,
 				completion = {
 					winhighlight = "Normal:CmpPmenu,CursorLine:CmpSel",
 					-- winhighlight = 'Normal:CmpPmenu,CursorLine:CmpSel,Search:PmenuSel',
@@ -107,9 +113,8 @@ return {
 				end, { "i", "s" }),
 			},
 			sources = {
-                {
-					name = "luasnip",
-                },
+				{ name = "luasnip" },
+				{ name = "calc" },
 				{
 					name = "buffer",
 					option = {

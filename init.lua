@@ -1,11 +1,15 @@
 vim.g.mapleader = ","
-vim.cmd('set nohlsearch')
+-- vim.cmd('set nohlsearch')
+--
+-- vim.cmd('set fo-=c fo-=r fo -=o')
 
-
-function noremap(key, expr)
-  vim.keymap.set('n', key, expr, { noremap = true, silent = true})
+function noremap_loud(key, expr)
+	vim.keymap.set("n", key, expr, { noremap = true, silent = false })
 end
 
+function noremap(key, expr)
+	vim.keymap.set("n", key, expr, { noremap = true, silent = true })
+end
 
 -----------------------------
 -----------------------------
@@ -32,17 +36,31 @@ vim.opt.laststatus = 2
 vim.opt.showcmd = false
 vim.opt.ruler = false
 vim.opt.signcolumn = "no"
-vim.api.nvim_set_keymap("n", "s", ":update<CR>", { noremap = true, silent = false })
+noremap("s", ":update<CR>")
 -- vim.cmd("autocmd! BufWritePost $MYVIMRC source $MYVIMRC")
 local group = vim.api.nvim_create_augroup("kdog3682", { clear = true })
 
-function lua_bufwrite_callback()
-    local bufname = vim.api.nvim_buf_get_name(0)
-    -- local ft = get_filetype(bufname)
-     -- print(bufname)
-    execute("source", bufname)
+function tail(file)
+	-- https://github.com/hrsh7th/cmp-calc
+	local bufname = file or vim.api.nvim_buf_get_name(0)
+	return vim.fn.fnamemodify(bufname, ":p")
 end
-vim.api.nvim_create_autocmd("BufWritePost", {group = group, callback = lua_bufwrite_callback, pattern = {"lua"}})
+function head(file)
+	local bufname = file or vim.api.nvim_buf_get_name(0)
+	return vim.fn.fnamemodify(bufname, ":h")
+end
+function lua_bufwrite_callback()
+	local bufname = vim.api.nvim_buf_get_name(0)
+	print("howdy", bufname)
+	local dir = tail(head())
+	if dir == "snippets" then
+		print(bufname)
+	end
+	execute("source", bufname)
+end
+
+vim.cmd("autocmd! BufWritePost $MYVIMRC source $MYVIMRC")
+vim.api.nvim_create_autocmd("BufWritePost", { group = group, callback = lua_bufwrite_callback, pattern = { "lua" } })
 -- vim.api.nvim_create_autocmd("FileType", group = group, callback = filetype_callback)
 
 -----------------------------
@@ -225,7 +243,7 @@ function Person:introduce()
 end
 
 -- Create an instance of the Person class
-local person = Person:new("John", 30)
+-- local person = Person:new("John", 30)
 
 -- Access properties and call methods
 -- print(person:getName()) -- Output: John
@@ -261,13 +279,9 @@ vim.api.nvim_set_keymap("n", "lp", ":lua print_variables_above_line()<CR>", { no
 
 -- Function to toggle comments for the current line
 local function toggle_comments()
-	-- Get the current line number
 	local line_number = vim.fn.line(".")
-	-- Get the comment string for the current filetype
 	local commentstring = vim.bo.commentstring or ""
-	-- Check if the current line is commented
 	local is_commented = vim.fn.match(vim.fn.getline(line_number), "^%s*" .. commentstring) >= 0
-	-- If the line is commented, remove the comment; otherwise, add it
 	if is_commented then
 		vim.fn.setline(
 			line_number,
@@ -288,10 +302,38 @@ local comment_delimiters = {
 	-- Add more filetypes and their respective comment delimiters as needed
 }
 
--- Function to print all contents of a table
+function is_object(x)
+	if not is_table(x) then
+		return false
+	end
+	if x[1] == nil then
+		return true
+	else
+		return false
+	end
+end
+
+function is_array(x)
+	if not is_table(x) then
+		return false
+	end
+	if x[1] == nil then
+		return false
+	else
+		return true
+	end
+end
 local function print_table_contents(tbl)
-	for key, value in pairs(tbl) do
-		print(key, ': ', value)
+	if is_array(tbl) then
+		for key, value in pairs(tbl) do
+			print(key, "...", value)
+		end
+	elseif is_object(tbl) then
+		for key, value in pairs(tbl) do
+			print(key, ": ", value)
+		end
+	else
+		print(tbl)
 	end
 end
 
@@ -314,49 +356,9 @@ function foo()
 		print(choice)
 	end)
 end
--- vim.ui.input({ prompt = 'Enter value for shiftwidth: ' }, function(input)
---   vim.o.shiftwidth = tonumber(input)
---  end)
--- end
-
-vim.api.nvim_set_keymap("n", "<Leader>rx", ':lua select_item({"a", "b", "bb"})<CR>', { noremap = true, silent = true })
-vim.api.nvim_set_keymap("n", "<Leader>r", ":lua foo()<CR>", { noremap = true })
-
-vim.g.your_cmp_disable_enable_toggle = 1
-
-local s = [[
-
-vim.g.your_cmp_disable_enable_toggle =
-
-
-]]
-
--- Define a function to evaluate and execute the current line
-local function eval_and_execute_current_line()
-	-- Get the current line under the cursor
-	local current_line = vim.api.nvim_get_current_line()
-
-	-- Evaluate the Lua code in the current line
-	local success, result = pcall(load(current_line))
-
-	-- If evaluation was successful, execute the result
-	if success then
-		if type(result) == "function" then
-			result()
-		else
-			print("Result:", result)
-		end
-	else
-		print("Error:", result)
-	end
-end
-
--- Map a key to trigger the eval_and_execute_current_line function
--- vim.api.nvim_set_keymap('n', '<Leader>e', '<cmd>lua eval_and_execute_current_line()<CR>', { noremap = true, silent = true })
+-- vim.g.your_cmp_disable_enable_toggle = 1
 
 local api = vim.api
-
-vim.g.funcs = "aaa"
 
 function getline()
 	return vim.fn.getline(vim.fn.line("."))
@@ -386,83 +388,84 @@ local function _add_keymap_and_append(key, mapping)
 	print("Command appended to file:", mapping)
 end
 
-
 function reload_vim()
-    vim.cmd("source ~/.config/nvim/init.lua")
-    print("Reload")
+	vim.cmd("source ~/.config/nvim/init.lua")
+	print("Reload")
 end
 
-vim.cmd("autocmd! BufWritePost $MYVIMRC source $MYVIMRC")
 require("config")
 
-
+vim.g.ts_file = "~/my-vitesse-app/src/main.ts"
+vim.g.vue_file = "~/my-vitesse-app/src/main.ts"
+vim.g.clip_file = "~/2023/clip.js"
+vim.g.files = {
+	"~/temp.txt",
+}
+vim.g.directories = {
+	"~/",
+	"~/my-vitesse-app/src",
+}
+vim.g.state = {
+	debug = { 0, 1 },
+	fzf = {
+		vim.g.files,
+		vim.g.directories,
+	},
+}
 
 function ToggleComment()
-    local line = vim.api.nvim_get_current_line()
-    local comment_string = vim.api.nvim_buf_get_option(0, "commentstring")
-    vim.ui.input("cs", comment_string)
+	local line = vim.api.nvim_get_current_line()
+	local comment_string = vim.api.nvim_buf_get_option(0, "commentstring")
+	vim.ui.input("cs", comment_string)
 
-    -- Check if the line is already commented
-    if string.find(line, "^%s*" .. comment_string) then
-        -- Remove comment
-        local uncommented_line = string.gsub(line, "^%s*" .. comment_string, "")
-        vim.api.nvim_set_current_line(uncommented_line)
-    else
-        -- Add comment
-        local commented_line = comment_string .. line
-        vim.api.nvim_set_current_line(commented_line)
-    end
+	-- Check if the line is already commented
+	if string.find(line, "^%s*" .. comment_string) then
+		-- Remove comment
+		local uncommented_line = string.gsub(line, "^%s*" .. comment_string, "")
+		vim.api.nvim_set_current_line(uncommented_line)
+	else
+		-- Add comment
+		local commented_line = comment_string .. line
+		vim.api.nvim_set_current_line(commented_line)
+	end
 end
 
-vim.o.numberwidth = 2  -- Adjust to your preference
-
-
-
-
+vim.o.numberwidth = 2 -- Adjust to your preference
 
 -- Function to write the current TreeSitter tree to a JSON file
 local function ExportTreeAsJSON2()
-    local filePath = "tree-sitter.json"
-    local parser = vim.treesitter.get_parser(0, vim.bo.filetype)
-    local tree = parser:parse()[1]
-    local root = tree:root()
-    print(root)
+	local filePath = "tree-sitter.json"
+	local parser = vim.treesitter.get_parser(0, vim.bo.filetype)
+	local tree = parser:parse()[1]
+	local root = tree:root()
+	print(root)
 
-    -- Convert the TreeSitter tree to a Lua table
-    local function convertNode(node)
-        local t = {
-            type = node:type(),
-            range = { node:range() },
-            rows = { node:source() },
-        }
+	-- Convert the TreeSitter tree to a Lua table
+	local function convertNode(node)
+		local t = {
+			type = node:type(),
+			range = { node:range() },
+			rows = { node:source() },
+		}
 
-        local childNodes = {}
-        for childNode in node:iter_children() do
-            table.insert(childNodes, convertNode(childNode))
-        end
+		local childNodes = {}
+		for childNode in node:iter_children() do
+			table.insert(childNodes, convertNode(childNode))
+		end
 
-        if #childNodes > 0 then
-            t.children = childNodes
-        end
+		if #childNodes > 0 then
+			t.children = childNodes
+		end
 
-        return t
-    end
+		return t
+	end
 
-    local treeData = convertNode(root)
+	local treeData = convertNode(root)
 
-    -- Write the TreeSitter tree to a JSON file
-    local jsonData = vim.json.encode(treeData)
-    vim.fn.writefile({jsonData}, filePath)
+	-- Write the TreeSitter tree to a JSON file
+	local jsonData = vim.json.encode(treeData)
+	vim.fn.writefile({ jsonData }, filePath)
 end
-
-
-
-
-
-
-
-
-
 
 vim.keymap.set("n", "\\", function()
 	local line = vim.fn.getline(".")
@@ -490,271 +493,797 @@ end, { expr = false })
 
 function ls_root_files()
 	local output = vim.fn.system("ls", "/")
-  print(output)
+	print(output)
 end
-
-
 
 local ls = require("luasnip")
 
 vim.keymap.set({ "i", "s" }, "<c-l>", function()
 	if ls.choice_active() then
 		ls.change_choice(1)
-    end
+	end
 end)
 -- fmt4
 
-
 function toggler()
-    vim.cmd("Lazy reload " .. vim.g.plugin)
+	vim.cmd("Lazy reload " .. vim.g.plugin)
 end
 
 function get_filetype(file)
-  if not file then
-    return vim.bo.filetype
-  else
-    return 'todo!'
-  end
+	if not file then
+		return vim.bo.filetype
+	else
+		local fileTypes = {
+			txt = "text",
+			pdf = "pdf",
+			typ = "typst",
+			lua = "lua",
+			js = "javascript",
+			css = "css",
+			py = "python",
+			vim = "vim",
+			-- Add more extensions and types as needed
+		}
+		local extension = string.match(file, "%.(%a+)$")
+		return fileTypes[extension]
+	end
 end
-function prettier()
-    local e = get_filetype()
-    vim.fn.system(cmd)
+function join(a)
+	return table.concat(a, " ")
+end
+function command(...)
+	local s = join({ ... })
+	print("command", s)
+	vim.cmd(s)
 end
 function reloader()
-    vim.cmd("Lazy reload " .. vim.g.plugin)
+	command("Lazy reload " .. vim.g.plugin)
 end
 vim.keymap.set("n", "<c-p>", ":FzfLua oldfiles resume = true<CR>", { silent = true })
-vim.keymap.set("n", "P", prettier, { silent = true })
 vim.keymap.set("n", "<leader><leader>r", reloader, { silent = true })
-local function anything_handler(s)
-    local fn = get_filetype()
-    print(fn())
+function get_line()
+	local row, col = unpack(vim.api.nvim_win_get_cursor(0))
+	row = row - 1
+	local line = vim.api.nvim_buf_get_lines(0, row, row + 1, false)[1]
+	return line
+end
+function omni_toggle()
+	local w = vim.fn.expand("<cword>")
+	print(w)
+	replace_word_under_cursor()
+end
+function replace_word_under_cursor()
+	local line, col = unpack(vim.api.nvim_win_get_cursor(0))
+	local s = vim.api.nvim_get_current_line()
+	local a = s
+	local new_line_text = line_text:sub(1, col - #word_start) .. "foobar" .. line_text:sub(col + #word_end + 1)
+	vim.api.nvim_set_current_line(new_line_text)
+end
+noremap("<space>", omni_toggle)
+function pause(a, b, c, d)
+	if a then
+		vim.fn.input(a)
+        return a
+		-- vim.fn.input("press anything to continue")
+	end
+end
+function motion_qw()
+	-- local row, col = unpack(vim.api.nvim_win_get_cursor(0))
+	local a = vim.fn.getline(".")
+	local col = vim.fn.col(".")
+	local s1 = a[col]
+
+	if true then
+		return "123555"
+	end
+	if s1 == "," then
+		return "<RIGHT>"
+	else
+		return "<RIGHT>, "
+	end
+end
+function invert(a, b)
+	inoremap(b, a)
+	inoremap(a, b)
 end
 
+-- vim.keymap.set("i", "")
+function help()
+	local w = vim.fn.expand("<cword>")
+	print(w)
+end
+noremap("k", ":m-2<CR>")
+noremap("j", ":m+1<CR>")
+local function split(inputstr, sep)
+	sep = sep or "%s" -- Default separator is whitespace
+	local t = {} -- Table to store the substrings
+	for str in string.gmatch(inputstr, "([^" .. sep .. "]+)") do
+		table.insert(t, str) -- Insert each substring into the table
+	end
+	return t -- Return the table of substrings
+end
 
-vim.keymap.set("n", ";", ":lua anything_handler('')<LEFT><LEFT>")
+function anything_handler(s)
+	local handlers = {
+		gft = get_filetype,
+		help = help,
+	}
 
+	local key = ""
+	local parts = split(s, " ")
 
-M = require("stdlib.meta")
+	if #parts == 0 then
+		if vim.g.state.anything_handler_key == nil then
+			print("no vim.g.state.anything_handler_key ... early return")
+			return
+		else
+			key = vim.g.state.anything_handler_key
+		end
+	else
+		key = table.remove(parts, 1)
+		vim.g.state.anything_handler_key = key
+	end
+	if is_number(key) then
+		return vim.api.nvim_win_set_cursor(0, { tonumber(key - 1), 100 })
+	end
+	local func = handlers[key]
+
+	if func then
+		local success, result = pcall(func, unpack(parts))
+		if success then
+			print(result)
+		end
+	else
+		run_lua_function(key)
+	end
+end
+
+vim.keymap.set("n", ";", ":lua anything_handler('')<LEFT><LEFT>") -- interesting
+
+local M = require("stdlib.meta")
 
 vim.keymap.set("n", "<leader>r", "diwi", { silent = true, noremap = true })
 vim.keymap.set("n", "wa", ":wa<CR>", { silent = true, noremap = true })
 vim.keymap.set("n", "<leader>m", "<cmd> lua M.view_mappings()<CR>", { silent = false, noremap = true })
 
-
-
-
-
 -- vim.o.statusline = "%f             %=%{mode()== 'n' && '' or '-- INSERT --'}           "
 -- Define a Lua function to generate the status line
 
 local modes = {
-  ["n"] = "NORMAL",
-  ["no"] = "NORMAL",
-  ["v"] = "VISUAL",
-  ["V"] = "VISUAL LINE",
-  [""] = "VISUAL BLOCK",
-  ["s"] = "SELECT",
-  ["S"] = "SELECT LINE",
-  [""] = "SELECT BLOCK",
-  ["i"] = "INSERT",
-  ["ic"] = "INSERT",
-  ["R"] = "REPLACE",
-  ["Rv"] = "VISUAL REPLACE",
-  ["c"] = "COMMAND",
-  ["cv"] = "VIM EX",
-  ["ce"] = "EX",
-  ["r"] = "PROMPT",
-  ["rm"] = "MOAR",
-  ["r?"] = "CONFIRM",
-  ["!"] = "SHELL",
-  ["t"] = "TERMINAL",
+	["n"] = "NORMAL",
+	["no"] = "NORMAL",
+	["v"] = "VISUAL",
+	["V"] = "VISUAL LINE",
+	[""] = "VISUAL BLOCK",
+	["s"] = "SELECT",
+	["S"] = "SELECT LINE",
+	[""] = "SELECT BLOCK",
+	["i"] = "INSERT",
+	["ic"] = "INSERT",
+	["R"] = "REPLACE",
+	["Rv"] = "VISUAL REPLACE",
+	["c"] = "COMMAND",
+	["cv"] = "VIM EX",
+	["ce"] = "EX",
+	["r"] = "PROMPT",
+	["rm"] = "MOAR",
+	["r?"] = "CONFIRM",
+	["!"] = "SHELL",
+	["t"] = "TERMINAL",
 }
 local function filepath()
-   local fpath = vim.fn.fnamemodify(vim.fn.expand "%", ":~")
-  if fpath == "" or fpath == "." then
-      return " "
-  end
-  return string.format(" %%<%s", fpath)
-  -- Refer to :h filename-modifiers for more.
+	local fpath = vim.fn.fnamemodify(vim.fn.expand("%"), ":~")
+	if fpath == "" or fpath == "." then
+		return " "
+	end
+	return string.format(" %%<%s", fpath)
+	-- Refer to :h filename-modifiers for more.
 end
 function statusline()
-    -- Get current file name
-    local filename = vim.fn.expand('%:t')
-    local filetype = vim.bo.filetype
-    local line = vim.fn.line('.')
-    local current_mode = vim.api.nvim_get_mode().mode
+	-- Get current file name
+	local filename = vim.fn.expand("%:t")
+	local filetype = vim.bo.filetype
+	local line = vim.fn.line(".")
+	local current_mode = vim.api.nvim_get_mode().mode
 
-    -- Get total number of lines in the buffer
-    local total_lines = vim.fn.line('$')
-    return string.format("File: %s | Type: %s | Line: %d/%d", filename, filetype, line, total_lines)
+	-- Get total number of lines in the buffer
+	local total_lines = vim.fn.line("$")
+	return string.format("File: %s | Type: %s | Line: %d/%d", filename, filetype, line, total_lines)
 end
 function statusline()
-    local current_mode = vim.api.nvim_get_mode().mode
-    return filepath() .. '     ' .. (current_mode == 'i' and "-- INSERT --"  or '')
+	local current_mode = vim.api.nvim_get_mode().mode
+	return filepath() .. "     " .. (current_mode == "i" and "-- INSERT --" or "")
 end
 
 -- Set the statusline option to use the Lua function
-vim.o.statusline = '%!v:lua.statusline()'
+vim.o.statusline = "%!v:lua.statusline()"
 vim.o.laststatus = 2
 
 function open(file_path)
-  vim.api.nvim_command("edit! " .. file_path)
-  end
+	vim.api.nvim_command("edit! " .. file_path)
+end
 function open_buffer(file_path)
-  local file_path = file_path or "~/abc.typ"
-  open(file_path)
+	local file_path = file_path or "~/abc.typ"
+	open(file_path)
 end
 
 function open_prev_buffer()
-  local file_path = "#"
-  open(file_path)
+	local file_path = "#"
+	open(file_path)
 end
 
 vim.keymap.set("i", "_", "-")
 vim.keymap.set("i", "-", "_")
-vim.keymap.set("n", "\\", function()
-	local line = vim.fn.getline(".")
-    local col = vim.fn.col(".")
-    -- require("fzf-lua").commands()
-    require("fzf-lua").fzf_exec({"a", "b"})
-end, {noremap = true})
+
+local function empty(value)
+	-- Check for nil values
+	if value == nil then
+		return true
+	elseif type(value) == "table" then
+		return next(value) == nil
+	elseif type(value) == "string" then
+		return value == ""
+	else
+		return false
+	end
+end
+
+function trim(s)
+	return s:gsub("^%s*(.-)%s*$", "%1")
+end
+
+local function everything_before_cursor_is_spaces()
+	local current_line = vim.api.nvim_get_current_line()
+	local cursor_col = vim.api.nvim_win_get_cursor(0)[2]
+	local slice = string.sub(current_line, 1, cursor_col)
+	return empty(trim(slice))
+end
+
+function is_filetype(s)
+	return s == get_filetype()
+end
+function smart_dash()
+	if is_filetype("lua") and everything_before_cursor_is_spaces() then
+		return "-- "
+	else
+		return "_"
+	end
+end
+
+function fzf()
+	local input = vim.g.state.fzf[2]
+	local function default(selected)
+		local a = expand_path(selected[1])
+		if isdir(a) then
+			nvim_tree(a)
+		else
+			open_buffer(a)
+		end
+	end
+	require("fzf-lua").fzf_exec(input, { actions = { default = default } })
+end
+noremap("\\", fzf)
 
 function execute(cmd)
-    print('CMD:', cmd)
-    vim.api.nvim_command(cmd)
+	print("CMD:", cmd)
+	vim.api.nvim_command(cmd)
 end
 function resourcer()
-    execute("source", vim.g.source_file)
+	execute("source", vim.g.source_file)
 end
-vim.api.nvim_create_user_command(
-    'Upper',
-    function(opts)
-        print(string.upper(opts.args))
-    end,
-    { nargs = 1 }
-)
+vim.api.nvim_create_user_command("Upper", function(opts)
+	print(string.upper(opts.args))
+end, { nargs = 1 })
 
-
-noremap('<leader><leader>e', ExportTreeAsJSON2)
-noremap('f', 'dd')
-noremap('r', '<c-r>')
-noremap('\\', open_buffer)
-noremap('=', open_prev_buffer)
-noremap('3', "#")
-noremap('b', "<c-o>")
-noremap('h', "<c-i>")
+noremap("<leader><leader>e", ExportTreeAsJSON2)
+noremap("f", "dd")
+noremap("r", "<c-r>")
+noremap("\\", open_buffer)
+noremap("=", open_prev_buffer)
+noremap("3", "#")
+noremap("b", "<c-o>")
+noremap("h", "<c-i>")
 noremap("q", ":q<cr>")
 noremap("<leader><leader>r", resourcer)
 
-vim.g.plugin = 'fzf-lua'
-vim.g.dir = '~/.config/nvim/lua'
-vim.g.source_file = '~/.config/nvim/lua/config/snippets/test.lua'
-vim.g.source_file = '~/.config/nvim/lua/config/init.lua'
-vim.g.source_file = '~/.config/nvim/lua/config/options.lua'
-vim.g.source_file = '~/.config/nvim/lua/config/more/lua.lua'
-vim.g.vim_file = '~/.config/nvim/init.lua'
-vim.g.typst_file = '~/abc.typ'
-vim.g.plugin = 'nvim-grey'
-vim.g.plugin = 'nvim-treesitter'
+vim.g.plugin = "fzf-lua"
+vim.g.dir = "~/.config/nvim/lua"
+vim.g.source_file = "~/.config/nvim/lua/config/snippets/test.lua"
+vim.g.source_file = "~/.config/nvim/lua/config/init.lua"
+vim.g.source_file = "~/.config/nvim/lua/config/options.lua"
+vim.g.source_file = "~/.config/nvim/lua/config/more/lua.lua"
+vim.g.source_file = "~/.config/nvim/lua/snippets/lua.lua"
+vim.g.vim_file = "~/.config/nvim/init.lua"
+vim.g.typst_file = "~/abc.typ"
+vim.g.plugin = "nvim-grey"
+vim.g.plugin = "nvim-treesitter"
 
 local function count_params(fn)
-    local info = debug.getinfo(fn, "u")
-    return info.nparams
+	local info = debug.getinfo(fn, "u")
+	return info.nparams
 end
-
 
 local function fast_command(key, cmd)
-    noremap("<leader><leader>" .. key, ':' .. cmd .. '<CR>')
+	noremap("<leader><leader>" .. key, ":" .. cmd .. "<CR>")
 end
 local function fastfile(key, file)
-    local function func()
-        open_buffer(file)
-    end
-    noremap(key, func)
+	table.insert(vim.g.files, file)
+	local function func()
+		open_buffer(file)
+	end
+	noremap(key, func)
 end
 
+local function iso8601()
+	local time = os.date("!*t")
+	local template = "%04d-%02d-%02d"
+	return string.format(template, time.year, time.month, time.day)
+end
 
-vim.g.ts_file = '~/my-vitesse-app/src/main.ts'
-vim.g.vue_file = '~/my-vitesse-app/src/main.ts'
-vim.g.clip_file = '~/2023/clip.js'
-fastfile('esf', vim.g.source_file)
-fastfile('evf', vim.g.vim_file)
-fastfile('evu', vim.g.vue_file)
-fastfile('evc', vim.g.clip_file)
-fastfile('etf', vim.g.typst_file)
+function edit_dated_note_file()
+	local file = string.format("~/NOTES/%s.txt", iso8601())
+	open_buffer(file)
+end
+vim.g.lua_file = "/home/kdog3682/.config/nvim/init.lua"
+noremap("ednf", edit_dated_note_file)
+-- fastfile('ecf', vim.g.clip_f)
 function inoremap(key, expr)
-    vim.keymap.set('i', key, expr, { expr = true, noremap = true, silent = true})
+	vim.keymap.set("i", key, expr, { expr = true, noremap = true, silent = true })
 end
 
-function get_current_buffer()
-    return vim.fn.expand('%')
+function get_current_buffer(file)
+	return file or vim.fn.expand("%")
 end
 function get_prev_buffer()
-    return vim.fn.expand('#')
+	return vim.fn.expand("#")
 end
 
 function get_current_buffer_directory()
-    return vim.fn.fnamemodify(vim.fn.expand("%"), ":h")
+	return head()
 end
 function get_prev_buffer_directory()
-    return vim.fn.fnamemodify(vim.fn.expand("%"), ":h")
+	return vim.fn.fnamemodify(vim.fn.expand("%"), ":h")
 end
-inoremap('qg3', get_prev_buffer)
-inoremap('qgd3', get_prev_buffer_directory)
-inoremap('qgd4', get_current_buffer_directory)
-inoremap('qg4', get_current_buffer)
-
+function qg_input()
+	local a = vim.input("query")
+	return a .. a .. a
+end
+inoremap("qgi", qg_input)
+inoremap("qg3", get_prev_buffer)
+inoremap("qgd3", get_prev_buffer_directory)
+inoremap("qgd4", get_current_buffer_directory)
+inoremap("qg4", get_current_buffer)
 
 vim.filetype.add({
-  pattern = {
-    ["%.typ$"] = "typst", -- Associate files with .abc.def.js extension with the typst filetype
-    ["%.xyz%.js$"] = "typst", -- Associate files with .xyz.js extension with the typst filetype
-  },
-  extension = {
-    typ = "typst", -- Associate .typ files with the typst filetype
-  },
+	pattern = {
+		["%.typ$"] = "typst", -- Associate files with .abc.def.js extension with the typst filetype
+		["%.xyz%.js$"] = "typst", -- Associate files with .xyz.js extension with the typst filetype
+	},
+	extension = {
+		typ = "typst", -- Associate .typ files with the typst filetype
+	},
 })
 
-
 function prompt_for_input()
-    prompt = "prompting for input"
-    function callback(answer)
-        return answer
-    end
-    local input = vim.ui.input({prompt = prompt}, callback)
+	prompt = "prompting for input"
+	function callback(answer)
+		return answer
+	end
+	local input = vim.ui.input({ prompt = prompt }, callback)
 end
 
 fast_command("t", "InspectTree")
 fast_command("m", "messages")
 
 function eval(s)
-    return vim.fn.eval(s)
+	return vim.fn.eval(s)
 end
-
 
 function isfile(x)
-    return vim.fn.isfile(x)
+	return vim.fn.isfile(x)
+end
+function chdir(dir)
+	vim.cmd.cd(dir)
 end
 function isdir(x)
-    return vim.fn.isdirectory(x)
+	return vim.fn.isdirectory(x)
 end
 function git_push_directory(dir)
-    vim.fn.chdir(dir)
-    vim.fn.system('git', 'add .')
-    vim.fn.system('git', 'commit', '-m pushing"')
-    vim.fn.system('git', 'push')
-    -- execute '!open ' . shellescape(expand('<cfile>'), 1
+	vim.fn.chdir(dir)
+	vim.fn.system("git", "add .")
+	vim.fn.system("git", "commit", '-m pushing"')
+	vim.fn.system("git", "push")
+	-- execute '!open ' . shellescape(expand('<cfile>'), 1
 end
 -- git_push_directory("/home/kdog3682/.config/nvim")
 
+function run_lua_function(key)
+	vim.cmd(":lua " .. key .. "()")
+end
 
 function run_python_function(key, arg)
-  vim.fn.system({'python3', '~/PYTHON/run.py', key, arg})
+	vim.fn.system({ "python3", "~/PYTHON/run.py", key, arg })
 end
 function open_file(file)
-    local file = file or vim.fn.expand("%")
-    print(file)
-    run_python_function("ofile", file)
+	local file = file or vim.fn.expand("%")
+	print(file)
+	run_python_function("ofile", file)
 end
-vim.keymap.set('n', '<leader>o', open_file)
+vim.keymap.set("n", "<leader>o", open_file)
+
+function foo()
+	local bufnr = vim.api.nvim_get_current_buf()
+	local comment_delimiters = vim.bo[bufnr].comments
+	print(comment_delimiters)
+	print(vim.inspect(comment_delimiters))
+end
+
+function print_node(node)
+	local start_row, start_col, end_row, end_col = vim.treesitter.get_node_range(node)
+	print("start_row", start_row)
+	print("end_row", end_row)
+end
+
+function test(s, r)
+	if not s then
+		return false
+	end
+	return s:find(r)
+end
+function is_number(x)
+	return type(x) == "number" or test(x, "^%d")
+end
+function is_string(x)
+	return type(x) == "string"
+end
+function find_parent_node(node, check)
+	local checkpoint = check
+	if is_string(check) then
+		checkpoint = function(node)
+			return node:type() == check
+		end
+	end
+
+	local current = node
+	while current ~= nil do
+		if checkpoint(current) then
+			return current
+		end
+
+		current = current:parent()
+	end
+
+	return false
+end
+
+function get_root_node(winnr)
+	local node = vim.treesitter.get_node()
+	-- local ts_utils = require("nvim-treesitter.ts_utils")
+	-- local node = ts_utils.get_node_at_cursor()
+	-- print(node:parent())
+	print(get_node_text(node:child(0)))
+	-- local root = ts_utils:get_root_for_node(node)
+	-- print(root)
+	-- local ts_utils = require("nvim-treesitter.ts_utils")
+	-- tree = root:tree()
+	-- print(tree)
+end
+function get_node(node)
+	if not node then
+		local ts_utils = require("nvim-treesitter.ts_utils")
+		return ts_utils.get_node_at_cursor()
+	end
+	return node
+end
+function get_function_node(node)
+	local node = get_node(node)
+	return find_parent_node(node, "function_declaration")
+end
+function is_boolean(x)
+	return type(x) == "boolean"
+end
+function find_child_node(node, kind)
+	local function callback(node)
+		return node:type() == kind
+	end
+
+	local function traverse_nodes(node)
+		local current = node
+		while current ~= nil do
+			if is_boolean(current) then
+				return false
+			end
+			if callback(current) then
+				return current
+			end
+			if current:child_count() > 0 then
+				local child = current:child(0)
+				local result = traverse_nodes(child)
+				if exists(result) then
+					return result
+				end
+			end
+			current = current:next_sibling()
+		end
+	end
+	return traverse_nodes(node)
+end
+function get_identifier_node(node)
+	local child = find_child_node(node, "identifier")
+	return child
+end
+
+function simple_comment()
+	local bufnr = vim.api.nvim_get_current_buf()
+	local comment = vim.bo[bufnr].comments
+end
+vim.g.temp_file = "/home/kdog3682/temp.txt"
+function get_set_node(node, callback) end
+function get_set_line(index, fn) end
+
+local function read(file_path)
+	local file, err = io.open(file_path, "r")
+	if not file then
+		error("Failed to open file: " .. err)
+	end
+
+	local content = file:read("*a")
+	file:close()
+
+	local decoded_data, decode_err = vim.json.decode(content)
+	if decode_err then
+		return content
+	else
+		return decoded_data
+	end
+end
+
+function keys(iterable)
+	local store = {}
+	for key, _ in pairs(iterable) do
+		table.insert(store, key)
+	end
+	return store
+end
+
+function is_table(x)
+	return type(x) == "table"
+end
+local function write(file_path, data)
+	local content = data
+	if is_object(data) then
+		content = { vim.json.encode(data) }
+	elseif not is_array(data) then
+		content = { tostring(data) }
+	end
+	vim.fn.writefile(content, file_path)
+end
+function clip(s)
+	write(vim.g.clip_file, s)
+end
+
+local function get_line_info()
+	local current_buffer = vim.api.nvim_get_current_buf()
+	local current_line = vim.api.nvim_get_current_line()
+	local trimmed_line = current_line:gsub("^%s*(.-)%s*$", "%1")
+	local leading_spaces = current_line:match("^%s*")
+	local num_leading_spaces = leading_spaces and #leading_spaces or 0
+
+	return {
+		text = trimmed_line,
+		ind = num_leading_spaces,
+	}
+end
+
+function temp(data)
+	write(vim.g.temp_file, data)
+end
+
+function prettier()
+	local file = get_current_buffer()
+	local ft = get_filetype(file)
+	local deno = "deno fmt --indent-width=4 --no-semicolons --line width=65"
+	local stylua = "/mnt/chromeos/MyFiles/Downloads/stylua"
+	local ref = {
+		lua = stylua,
+		vue = "eslint --fix",
+		javascript = deno,
+		typescript = deno,
+	}
+	local cmd = ref[ft] .. " " .. file
+	os.execute(cmd)
+	vim.cmd("silent! e!")
+end
+
+function opposite(s)
+	local ref = {
+		["1"] = 0,
+		["0"] = 1,
+		["false"] = true,
+		["true"] = false,
+	}
+	return ref[tostring(s)]
+end
+function toggle()
+	local val = opposite(vim.g.state.debug)
+	print("new value @ toggle", val)
+	vim.g.state.debug = val
+end
+-- Execute a shell command using vim.fn.system
+function execute_command(...)
+	local command = table.concat({ ... }, " ")
+	local result = vim.fn.system("clear;" .. command)
+	print(result)
+end
+
+function foo()
+	-- local iden = get_identifier_node(node)
+	-- local apikeys = keys(vim.api)
+	-- temp(apikeys)
+	-- print(get_filetype("abc.js"))
+	execute_command("ls -a")
+end
+-- foo()
+function get_buffers()
+	local buffers = vim.api.nvim_list_bufs()
+	return buffers
+end
+function print_factory(fn)
+	local function printed(...)
+		local success, result = pcall(fn)
+		print(result)
+		print_table_contents(result)
+	end
+	return printed
+end
+inoremap("-", smart_dash) -- dangerous
+noremap("ls", print_factory(get_buffers))
+
+inoremap("qw", motion_qw)
+
+vim.keymap.set("i", ";", ":")
+vim.keymap.set("i", ":", ";")
+vim.opt.list = false -- dont show hidden spaces
+
+function add_snippet(s)
+	ls.add_snippets("all", {})
+end
+
+function find_line(r)
+	local pattern = vim.regex(r)
+	local lines = vim.fn.getline(1, "$")
+
+	for i, line in ipairs(lines) do
+		if pattern:match_line(line) then
+			print("Match found on line " .. i .. ": " .. line)
+		end
+	end
+end
+function clone(url, to)
+	local s = string.format("git clone %s %s", url, to)
+	vim.fn.system(s)
+end
+function exists(x)
+	return not empty(x)
+end
+function get_child_nodes(node)
+	local store = {}
+	local stop = node:child_count()
+	for i = 1, stop do
+		local child = node:child(i - 1)
+		table.insert(store, child)
+	end
+	return store
+end
+function map(items, fn)
+	local store = {}
+	for i, item in pairs(items) do
+		table.insert(store, fn(item))
+	end
+	return store
+end
+function get_page_text()
+	local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+	return table.concat(lines, "\n")
+end
+function get_node_text(node, source)
+	if not source then
+		source = get_page_text()
+	end
+	return vim.treesitter.get_node_text(node, source)
+end
+function find_node(items, kind)
+	local function checkpoint(node)
+		return node:type() == kind
+	end
+	for i, item in pairs(items) do
+		if checkpoint(item) then
+			return item
+		end
+	end
+end
+function get_top_nodes()
+	local a = 12
+	return 123
+end
+function asdf()
+	return
+end
+function lua_function_caller()
+	-- howdy
+	local node = get_function_node()
+
+	if node == false then
+		print("error for some reason ...")
+		return
+	end
+
+	local a = get_identifier_node(node)
+	local text = get_node_text(a)
+	if text == "get_root_node" then
+		return run_lua_function(text)
+	end
+	local b = find_child_node(node, "block")
+	local children = get_child_nodes(node)
+	local comment = find_node(children, "comment")
+	if comment then
+		print(get_node_text(comment))
+	else
+		print("none")
+	end
+end
+
+noremap("P", prettier)
+noremap("1", lua_function_caller)
+vim.keymap.set("i", "qp", "(<c-o>$)")
+-- get_root_node()
+-- lua_function_caller()
+-- print(tail("aa"))
+-- motion_qw()
+-- https://github.com/yehuohan/cmp-im
+-- https://github.com/hrsh7th/cmp-calc
+
+-- clone("https://github.com/numToStr/Comment.nvim", "~/.config/nvim/lua/local-plugins/comment")
+-- works
+
+function bash(s)
+	os.execute(s)
+end
+
+-- bash([[
+--  sudo unzip /mnt/chromeos/Myfiles/Downloads/Hack.zip -d /usr/.local/share/fonts;
+-- sudo fc-cache -f -v;
+-- ]])
+
+bash([[
+    cd ~/.config/nvim
+    git add .
+    git commit -m "pushing"
+    git push
+    echo pushed!
+]])
+fastfile("esf", vim.g.source_file)
+fastfile("esf", vim.g.source_file)
+
+fastfile("ex", vim.g.temp_file)
+fastfile("evu", vim.g.vue_file)
+fastfile("evc", vim.g.clip_file)
+fastfile("evf", vim.g.lua_file)
+fastfile("etf", vim.g.typst_file)
+
+function sub(s, r, regex, flags)
+	if not flags then
+		flags = ""
+	end
+	return vim.fn.substitute(s, r, regex, flags)
+end
+function expand_path(path)
+    if test(path, '^~/') then
+        return path:gsub('~', '/home/kdog3682')
+    end
+    return path
+end
+function nvim_tree(path)
+	local api = require("nvim-tree.api")
+	api.tree.open({ path = path })
+end

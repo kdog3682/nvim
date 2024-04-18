@@ -73,16 +73,24 @@ require("lazy").setup({
 })
 
 local modules = {
-	"config.autocmds",
 	"config.options",
-    "config.more.lua",
-
+	"snippets.lua",
+	"config.autocmds",
+    -- "config.more.lua",
     -- "config.more.snippets",
     -- "config.snippets.lua",
     -- "config.snippets.test",
     -- "config.more.lua",
     -- "config.keymaps",
     -- "config.more.keymaps",
+}
+
+local languages = {
+    "lua",
+    "typst",
+    "vue",
+    "javascript",
+    "typescript",
 }
 
 for _, mod in ipairs(modules) do
