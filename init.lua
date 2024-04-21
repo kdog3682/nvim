@@ -1,24 +1,29 @@
 vim.g.mapleader = ","
--- vim.cmd('set nohlsearch')
---
--- vim.cmd('set fo-=c fo-=r fo -=o')
 
-function noremap_loud(key, expr)
-	vim.keymap.set("n", key, expr, { noremap = true, silent = false })
+function to_array(x)
+	if is_array(x) then
+		return x
+	else
+		return { x }
+	end
 end
-
-function noremap(key, expr)
+function noremap(key, expr, opts)
+	if not opts then
+		opts = {}
+	end
+	if opts.save then
+		expr = vim.fn.printf(":w<cr><cmd>lua %s()<cr>", expr)
+	elseif opts.args then
+		local argstr = join(map(to_array(opts.args), to_string_argument), ", ")
+		expr = vim.fn.printf("<cmd>lua %s(%s)<cr>", expr, argstr)
+    elseif opts.lua then
+		expr = vim.fn.printf("<cmd>lua %s()<cr>", expr)
+    end
 	vim.keymap.set("n", key, expr, { noremap = true, silent = true })
 end
 
------------------------------
------------------------------
------------------------------
-
--- noremap("kl", "ToggleSyntax()")
--- noremap("la", "Lazy")
--- noremap("bd", ":bd<CR>")
 vim.keymap.set("n", "x", '"_x')
+noremap("ls", ":ls<cr>")
 
 vim.opt.guicursor = "n:block"
 vim.opt.tabstop = 4
@@ -52,6 +57,7 @@ end
 function lua_bufwrite_callback()
 	local bufname = vim.api.nvim_buf_get_name(0)
 	print("howdy", bufname)
+	pause(bufname)
 	local dir = tail(head())
 	if dir == "snippets" then
 		print(bufname)
@@ -60,6 +66,8 @@ function lua_bufwrite_callback()
 end
 
 vim.cmd("autocmd! BufWritePost $MYVIMRC source $MYVIMRC")
+vim.cmd("autocmd! BufWritePost /home/kdog3682/.config/nvim/lua/snippets/lua.lua source $MYVIMRC")
+vim.cmd("autocmd! BufWritePost /home/kdog3682/.config/nvim/test.lua source ~/.config/nvim/test.lua")
 vim.api.nvim_create_autocmd("BufWritePost", { group = group, callback = lua_bufwrite_callback, pattern = { "lua" } })
 -- vim.api.nvim_create_autocmd("FileType", group = group, callback = filetype_callback)
 
@@ -67,7 +75,7 @@ vim.api.nvim_create_autocmd("BufWritePost", { group = group, callback = lua_bufw
 -----------------------------
 -----------------------------
 
-vim.o.termguicolors = true
+-- vim.o.termguicolors = true
 
 vim.g.loaded_python3_provider = 0
 vim.cmd("syntax on")
@@ -151,7 +159,6 @@ local function print_variables_above_line()
 	vim.fn.append(".", indent .. print_statement)
 end
 
--- Function to capture, filter (regex), and append output (case-insensitive)
 local function capture_and_append_filtered(cmd, filter_pattern)
 	-- Capture the output of the provided Neovim command
 	local stream = io.capture()
@@ -253,54 +260,10 @@ end
 vim.api.nvim_set_keymap("n", "[", ":normal! 10k<CR>", { noremap = true, silent = true })
 vim.api.nvim_set_keymap("n", "]", ":normal! 10j<CR>", { noremap = true, silent = true })
 
--- Get all key mappings
--- local mappings = vim.api.nvim_get_keymap('')
--- print(mappings)
--- Iterate over mappings
-
--- Function to list mappings that start with '[' for the current buffer
-local function list_mappings_starting_with_left_bracket()
-	local bufnr = vim.fn.bufnr() -- Get the buffer number of the current buffer
-	local mappings = vim.api.nvim_get_keymap("n")
-	print("Mappings starting with '[' for current buffer:")
-	for _, mapping in ipairs(mappings) do
-		print(mapping.lhs, mapping.rhs)
-		if mapping.lhs:sub(1, 1) == "[" then
-			print(mapping.lhs .. "\t" .. mapping.rhs)
-		end
-	end
+local function fzf_normal_commands()
+	local mappings = map(vim.api.nvim_get_keymap("n"), callback)
+	require("fzf-lua").fzf_exec(input, { actions = { default = default } })
 end
-
--- Call the function to list mappings starting with '[' for the current buffer
--- list_mappings_starting_with_left_bracket()
-
--- Function to scan the line above the current line for variable names and print them
-vim.api.nvim_set_keymap("n", "lp", ":lua print_variables_above_line()<CR>", { noremap = true, silent = true })
-
--- Function to toggle comments for the current line
-local function toggle_comments()
-	local line_number = vim.fn.line(".")
-	local commentstring = vim.bo.commentstring or ""
-	local is_commented = vim.fn.match(vim.fn.getline(line_number), "^%s*" .. commentstring) >= 0
-	if is_commented then
-		vim.fn.setline(
-			line_number,
-			vim.fn.substitute(vim.fn.getline(line_number), "^%s*" .. vim.pesc(commentstring), "", "")
-		)
-	else
-		vim.fn.setline(line_number, commentstring .. vim.fn.getline(line_number))
-	end
-end
-
--- Create a normal mode mapping for the "c" key to toggle comments
-vim.api.nvim_set_keymap("n", "c", ":lua toggle_comments()<CR>", { noremap = true, silent = true })
-
-local comment_delimiters = {
-	lua = "--",
-	python = "#",
-	javascript = "//",
-	-- Add more filetypes and their respective comment delimiters as needed
-}
 
 function is_object(x)
 	if not is_table(x) then
@@ -400,10 +363,21 @@ vim.g.vue_file = "~/my-vitesse-app/src/main.ts"
 vim.g.clip_file = "~/2023/clip.js"
 vim.g.files = {
 	"~/temp.txt",
+	"~/2023/examples.template.js",
 }
 vim.g.directories = {
 	"~/",
 	"~/my-vitesse-app/src",
+	"~/my-vitesse-app/src/components",
+	"~/.config/nvim/lua",
+	"~/.config/nvim/lua/plugins",
+	"~/.config/nvim/ftplugin",
+	"~/.config/nvim/lua/config",
+	"~/.config/nvim/lua/snippets",
+	"~/GITHUB",
+	"~/PYTHON",
+    "/home/kdog3682/.local/share/nvim/lazy",
+    "/home/kdog3682/javascript"
 }
 vim.g.state = {
 	debug = { 0, 1 },
@@ -411,6 +385,7 @@ vim.g.state = {
 		vim.g.files,
 		vim.g.directories,
 	},
+	files = vim.g.files,
 }
 
 function ToggleComment()
@@ -433,19 +408,14 @@ end
 vim.o.numberwidth = 2 -- Adjust to your preference
 
 -- Function to write the current TreeSitter tree to a JSON file
-local function ExportTreeAsJSON2()
-	local filePath = "tree-sitter.json"
-	local parser = vim.treesitter.get_parser(0, vim.bo.filetype)
-	local tree = parser:parse()[1]
-	local root = tree:root()
-	print(root)
+function ExportTreeAsJSON2()
+	local root = get_root_node()
+	-- append_file(vim.g.temp_file, root)
 
-	-- Convert the TreeSitter tree to a Lua table
 	local function convertNode(node)
 		local t = {
 			type = node:type(),
 			range = { node:range() },
-			rows = { node:source() },
 		}
 
 		local childNodes = {}
@@ -459,12 +429,7 @@ local function ExportTreeAsJSON2()
 
 		return t
 	end
-
-	local treeData = convertNode(root)
-
-	-- Write the TreeSitter tree to a JSON file
-	local jsonData = vim.json.encode(treeData)
-	vim.fn.writefile({ jsonData }, filePath)
+	append_file(vim.g.temp_file, convertNode(root))
 end
 
 vim.keymap.set("n", "\\", function()
@@ -528,8 +493,8 @@ function get_filetype(file)
 		return fileTypes[extension]
 	end
 end
-function join(a)
-	return table.concat(a, " ")
+function join(a, delimiter)
+	return table.concat(a, delimiter or " ")
 end
 function command(...)
 	local s = join({ ... })
@@ -540,7 +505,6 @@ function reloader()
 	command("Lazy reload " .. vim.g.plugin)
 end
 vim.keymap.set("n", "<c-p>", ":FzfLua oldfiles resume = true<CR>", { silent = true })
-vim.keymap.set("n", "<leader><leader>r", reloader, { silent = true })
 function get_line()
 	local row, col = unpack(vim.api.nvim_win_get_cursor(0))
 	row = row - 1
@@ -560,12 +524,8 @@ function replace_word_under_cursor()
 	vim.api.nvim_set_current_line(new_line_text)
 end
 noremap("<space>", omni_toggle)
-function pause(a, b, c, d)
-	if a then
-		vim.fn.input(a)
-        return a
-		-- vim.fn.input("press anything to continue")
-	end
+function pause(arg)
+	vim.fn.input(stringify(arg))
 end
 function motion_qw()
 	-- local row, col = unpack(vim.api.nvim_win_get_cursor(0))
@@ -582,15 +542,13 @@ function motion_qw()
 		return "<RIGHT>, "
 	end
 end
-function invert(a, b)
-	inoremap(b, a)
-	inoremap(a, b)
-end
-
--- vim.keymap.set("i", "")
 function help()
 	local w = vim.fn.expand("<cword>")
 	print(w)
+	-- vim.fn
+end
+function see(access)
+	temp(keys(access), "a")
 end
 noremap("k", ":m-2<CR>")
 noremap("j", ":m+1<CR>")
@@ -607,6 +565,7 @@ function anything_handler(s)
 	local handlers = {
 		gft = get_filetype,
 		help = help,
+        e = "e!",
 	}
 
 	local key = ""
@@ -629,10 +588,14 @@ function anything_handler(s)
 	local func = handlers[key]
 
 	if func then
-		local success, result = pcall(func, unpack(parts))
-		if success then
-			print(result)
-		end
+        if is_string(func) then
+            vim.cmd(func)
+        else
+            local success, result = pcall(func, unpack(parts))
+            if success then
+                print(result)
+            end
+        end
 	else
 		run_lua_function(key)
 	end
@@ -717,11 +680,18 @@ vim.keymap.set("i", "-", "_")
 
 local function empty(value)
 	-- Check for nil values
-	if value == nil then
+	if value == "xxxxxs" then
+		return true
+	elseif value == "" then
+		return true
+	elseif value == nil then
 		return true
 	elseif type(value) == "table" then
 		return next(value) == nil
 	elseif type(value) == "string" then
+		if len(value) == 0 then
+			return false
+		end
 		return value == ""
 	else
 		return false
@@ -750,19 +720,16 @@ function smart_dash()
 	end
 end
 
-function fzf()
-	local input = vim.g.state.fzf[2]
+function fzf(input)
+	if not is_array(input) then
+		input = vim.g.state.fzf[2]
+	end
 	local function default(selected)
-		local a = expand_path(selected[1])
-		if isdir(a) then
-			nvim_tree(a)
-		else
-			open_buffer(a)
-		end
+		local a = vim.fn.expand(selected[1])
+		nvim_tree(a)
 	end
 	require("fzf-lua").fzf_exec(input, { actions = { default = default } })
 end
-noremap("\\", fzf)
 
 function execute(cmd)
 	print("CMD:", cmd)
@@ -795,8 +762,10 @@ vim.g.source_file = "~/.config/nvim/lua/config/more/lua.lua"
 vim.g.source_file = "~/.config/nvim/lua/snippets/lua.lua"
 vim.g.vim_file = "~/.config/nvim/init.lua"
 vim.g.typst_file = "~/abc.typ"
-vim.g.plugin = "nvim-grey"
 vim.g.plugin = "nvim-treesitter"
+vim.g.plugin = "lsp"
+vim.g.plugin = "cmp-calc"
+vim.g.plugin = "nvim-grey"
 
 local function count_params(fn)
 	local info = debug.getinfo(fn, "u")
@@ -854,16 +823,6 @@ inoremap("qgd3", get_prev_buffer_directory)
 inoremap("qgd4", get_current_buffer_directory)
 inoremap("qg4", get_current_buffer)
 
-vim.filetype.add({
-	pattern = {
-		["%.typ$"] = "typst", -- Associate files with .abc.def.js extension with the typst filetype
-		["%.xyz%.js$"] = "typst", -- Associate files with .xyz.js extension with the typst filetype
-	},
-	extension = {
-		typ = "typst", -- Associate .typ files with the typst filetype
-	},
-})
-
 function prompt_for_input()
 	prompt = "prompting for input"
 	function callback(answer)
@@ -879,14 +838,11 @@ function eval(s)
 	return vim.fn.eval(s)
 end
 
-function isfile(x)
-	return vim.fn.isfile(x)
+function is_file(x)
+	return vim.fn.filereadable(x) == 1
 end
 function chdir(dir)
 	vim.cmd.cd(dir)
-end
-function isdir(x)
-	return vim.fn.isdirectory(x)
 end
 function git_push_directory(dir)
 	vim.fn.chdir(dir)
@@ -897,8 +853,27 @@ function git_push_directory(dir)
 end
 -- git_push_directory("/home/kdog3682/.config/nvim")
 
-function run_lua_function(key)
-	vim.cmd(":lua " .. key .. "()")
+function doublequote(s)
+	return vim.fn.printf('"%s"', s)
+end
+
+function maybe_print(s)
+    if s then
+        if type(s) == "userdata" then
+            local a = s:type()
+            if a then
+                print(stringify(get_node_info(s)))
+            end
+        else
+            print(s)
+        end
+    end
+end
+function run_lua_function(key, arg)
+	local argstr = ""
+    if arg then argstr = doublequote(arg) end
+	local cmd = vim.fn.printf(":lua maybe_print(%s(%s))", key, argstr)
+	vim.cmd(cmd)
 end
 
 function run_python_function(key, arg)
@@ -918,11 +893,6 @@ function foo()
 	print(vim.inspect(comment_delimiters))
 end
 
-function print_node(node)
-	local start_row, start_col, end_row, end_col = vim.treesitter.get_node_range(node)
-	print("start_row", start_row)
-	print("end_row", end_row)
-end
 
 function test(s, r)
 	if not s then
@@ -956,27 +926,8 @@ function find_parent_node(node, check)
 	return false
 end
 
-function get_root_node(winnr)
-	local node = vim.treesitter.get_node()
-	-- local ts_utils = require("nvim-treesitter.ts_utils")
-	-- local node = ts_utils.get_node_at_cursor()
-	-- print(node:parent())
-	print(get_node_text(node:child(0)))
-	-- local root = ts_utils:get_root_for_node(node)
-	-- print(root)
-	-- local ts_utils = require("nvim-treesitter.ts_utils")
-	-- tree = root:tree()
-	-- print(tree)
-end
-function get_node(node)
-	if not node then
-		local ts_utils = require("nvim-treesitter.ts_utils")
-		return ts_utils.get_node_at_cursor()
-	end
-	return node
-end
-function get_function_node(node)
-	local node = get_node(node)
+function get_function_node()
+	local node = get_cursor_node(node)
 	return find_parent_node(node, "function_declaration")
 end
 function is_boolean(x)
@@ -988,18 +939,16 @@ function find_child_node(node, kind)
 	end
 
 	local function traverse_nodes(node)
+        print_node(node)
 		local current = node
 		while current ~= nil do
-			if is_boolean(current) then
-				return false
-			end
 			if callback(current) then
 				return current
 			end
 			if current:child_count() > 0 then
-				local child = current:child(0)
+				local child = current:child(i)
 				local result = traverse_nodes(child)
-				if exists(result) then
+				if result ~= nil then
 					return result
 				end
 			end
@@ -1018,8 +967,56 @@ function simple_comment()
 	local comment = vim.bo[bufnr].comments
 end
 vim.g.temp_file = "/home/kdog3682/temp.txt"
-function get_set_node(node, callback) end
-function get_set_line(index, fn) end
+function get_set_node(node, callback)
+	local start_row, start_col, end_row, end_col = node:range()
+	local new_text = callback(node)
+	vim.api.nvim_buf_set_text(0, start_row, start_col, end_row, end_col, { new_text })
+end
+function match(s, regex)
+	local m = vim.fn.matchstr(s, vim.regex(regex))
+	if m == nil then
+		m = ""
+	end
+	return m
+end
+function len(x)
+	return x and #x
+end
+function to_lines(x)
+	if is_array(x) then
+		return x
+	else
+		return vim.fn.split(x, "\n")
+	end
+end
+local function replace_lines(from, to, payload)
+	vim.api.nvim_buf_set_lines(0, from, to, false, payload)
+end
+
+function repeatstr(str, count)
+	local result = ""
+	for i = 1, count do
+		result = result .. str
+	end
+	return result
+end
+function indent(payload, ind)
+	ind = ind or 0
+	local function indenter(s)
+		local spaces = repeatstr(" ", ind)
+		return spaces .. s
+	end
+	payload = map(to_lines(payload), indenter)
+	return payload
+end
+
+function get_set_line(line_number, fn)
+	local prev = vim.fn.getline(line_number)
+	local text = vim.fn.trim(prev)
+	local ind = len(match(text, "^%s*"))
+	local payload = indent(fn(text, ind), ind)
+	replace_lines(line_number - 1, line_number, payload)
+end
 
 local function read(file_path)
 	local file, err = io.open(file_path, "r")
@@ -1050,12 +1047,7 @@ function is_table(x)
 	return type(x) == "table"
 end
 local function write(file_path, data)
-	local content = data
-	if is_object(data) then
-		content = { vim.json.encode(data) }
-	elseif not is_array(data) then
-		content = { tostring(data) }
-	end
+	local content = stringify(data)
 	vim.fn.writefile(content, file_path)
 end
 function clip(s)
@@ -1075,8 +1067,20 @@ local function get_line_info()
 	}
 end
 
-function temp(data)
-	write(vim.g.temp_file, data)
+function tern(a, b, c)
+	if a then
+		return b
+	else
+		return c
+	end
+end
+function append_file(a, b)
+	local content = to_line_content(b)
+	vim.fn.writefile(content, a, "a")
+end
+function temp(data, mode)
+	local fn = tern(mode == "a", append_file, write)
+	fn(vim.g.temp_file, data)
 end
 
 function prettier()
@@ -1084,13 +1088,15 @@ function prettier()
 	local ft = get_filetype(file)
 	local deno = "deno fmt --indent-width=4 --no-semicolons --line width=65"
 	local stylua = "/mnt/chromeos/MyFiles/Downloads/stylua"
+
 	local ref = {
-		lua = stylua,
-		vue = "eslint --fix",
-		javascript = deno,
+		lua = stylua, -- works
+		vue = "eslint --fix", -- not working
+		javascript = deno, -- dunno
 		typescript = deno,
 	}
 	local cmd = ref[ft] .. " " .. file
+	pause(cmd)
 	os.execute(cmd)
 	vim.cmd("silent! e!")
 end
@@ -1145,9 +1151,6 @@ vim.keymap.set("i", ";", ":")
 vim.keymap.set("i", ":", ";")
 vim.opt.list = false -- dont show hidden spaces
 
-function add_snippet(s)
-	ls.add_snippets("all", {})
-end
 
 function find_line(r)
 	local pattern = vim.regex(r)
@@ -1186,11 +1189,9 @@ function get_page_text()
 	local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
 	return table.concat(lines, "\n")
 end
-function get_node_text(node, source)
-	if not source then
-		source = get_page_text()
-	end
-	return vim.treesitter.get_node_text(node, source)
+function get_node_text(node)
+	local bufnr = vim.api.nvim_get_current_buf()
+    return vim.treesitter.get_node_text(node, bufnr)
 end
 function find_node(items, kind)
 	local function checkpoint(node)
@@ -1209,31 +1210,78 @@ end
 function asdf()
 	return
 end
+
+function caller(fn)
+    success, result = pcall(fn)
+    if success then
+        maybe_print(result)
+    else
+        print("failed @ caller for fn", fn)
+    end
+end
+function one()
+	local node = get_function_node()
+	local a = get_identifier_node(node)
+	local identifier = get_node_text(a)
+	local cmd = vim.fn.printf(":lua caller(%s)", identifier)
+    vim.cmd(cmd)
+end
+
 function lua_function_caller()
 	-- howdy
 	local node = get_function_node()
 
 	if node == false then
-		print("error for some reason ...")
+		print("error for some reason ... no node was found ...")
 		return
 	end
 
 	local a = get_identifier_node(node)
-	local text = get_node_text(a)
-	if text == "get_root_node" then
-		return run_lua_function(text)
-	end
+	local identifier = get_node_text(a)
 	local b = find_child_node(node, "block")
 	local children = get_child_nodes(node)
 	local comment = find_node(children, "comment")
+	store = {}
+	store.identifier = identifier
+	store.arg = ""
 	if comment then
-		print(get_node_text(comment))
+		arg = get_node_text(comment)
+		store.arg = arg
+	end
+    maybe_debug(store)
+	if identifier == "lua_function_caller" then
+		return
+	end
+
+	run_lua_function(identifier, arg)
+end
+
+function maybe_debug(x)
+    vim.g.state.debug = true
+    if vim.g.state.debug == true then
+        pause(stringify(store))
+    end
+end
+function to_line_content(data)
+	if type(data) == "table" then
+		if is_array(data) then
+			return data
+		end
+		return { vim.fn.json_encode(data) }
 	else
-		print("none")
+		return { data }
+	end
+end
+function stringify(data)
+	if type(data) == "table" then
+		return vim.fn.json_encode(data)
+	else
+		return data
 	end
 end
 
-noremap("P", prettier)
+noremap("P", "prettier", { save = true })
+-- noremap("P", prettier)
 noremap("1", lua_function_caller)
 vim.keymap.set("i", "qp", "(<c-o>$)")
 -- get_root_node()
@@ -1249,19 +1297,31 @@ vim.keymap.set("i", "qp", "(<c-o>$)")
 function bash(s)
 	os.execute(s)
 end
+local function bashsnippet(_, _, command)
+	local file = io.popen(command, "r")
+	local res = {}
+	for line in file:lines() do
+		table.insert(res, line)
+	end
+	return res
+end
 
--- bash([[
---  sudo unzip /mnt/chromeos/Myfiles/Downloads/Hack.zip -d /usr/.local/share/fonts;
--- sudo fc-cache -f -v;
--- ]])
+function bash_smth()
+	bash([[
+ sudo unzip /mnt/chromeos/Myfiles/Downloads/Hack.zip -d /usr/.local/share/fonts;
+ sudo fc-cache -f -v;
+ ]])
+end
 
-bash([[
-    cd ~/.config/nvim
-    git add .
-    git commit -m "pushing"
-    git push
-    echo pushed!
-]])
+function git_push_directory()
+	bash([[
+        cd ~/.config/nvim
+        git add .
+        git commit -m "pushing"
+        git push
+        echo pushed!
+    ]])
+end
 fastfile("esf", vim.g.source_file)
 fastfile("esf", vim.g.source_file)
 
@@ -1275,15 +1335,728 @@ function sub(s, r, regex, flags)
 	if not flags then
 		flags = ""
 	end
-	return vim.fn.substitute(s, r, regex, flags)
-end
-function expand_path(path)
-    if test(path, '^~/') then
-        return path:gsub('~', '/home/kdog3682')
-    end
-    return path
+	return vim.fn.substitute(s, r, vim.regex(regex), flags)
 end
 function nvim_tree(path)
 	local api = require("nvim-tree.api")
 	api.tree.open({ path = path })
+end
+
+function get_root_node()
+	return vim.treesitter.get_parser():parse()[1]:root()
+end
+
+local function collect_top_level_identifiers()
+	local node = get_root_node()
+    if empty(node) then return end
+	local store = {}
+	for child in node:iter_children() do
+		if child:type() == "function_declaration" then
+			local iden = get_identifier_node(child)
+			push(store, get_node_text(iden))
+		end
+	end
+	return store
+end
+
+function get_cursor_node()
+	local cursor = vim.api.nvim_win_get_cursor(0)
+	local left_of_cursor_range = { cursor[1] - 1, cursor[2] - 1 }
+	local node = vim.treesitter.get_node({ pos = left_of_cursor_range })
+	return node
+end
+
+function fuzzyfind(dir)
+	if not dir then
+		dir = vim.g.state.directories[1]
+	end
+end
+noremap("<leader>f", fuzzyfind)
+
+function nvim_tree_toggle()
+	local tree = require("nvim-tree.api").tree
+	if tree.is_visible() then
+		tree.toggle()
+	end
+end
+
+function arrow_right()
+	local tree = require("nvim-tree.api").tree
+	if tree.is_visible() then
+		tree.toggle()
+	end
+end
+
+function arrow_left()
+	local tree = require("nvim-tree.api").tree
+	if tree.is_visible() then
+		tree.toggle()
+	end
+end
+function omni_copy()
+	local w = vim.fn.expand("<cword>")
+	print(w)
+end
+function choose(items, opt)
+	local select = vim.ui.select
+	if opt.multiple then
+		select = vim.ui.select_mult
+	end
+	local label = opt.label or "item"
+	local prompt = vim.fn.printf("please choose a %s", label)
+
+	select(options, {
+		prompt = prompt,
+	}, opt.callback)
+end
+function upper(s)
+	return s:upper()
+end
+function append(s, i)
+	if not i then
+		i = vim.fn.line(".")
+	end
+	vim.api.nvim_buf_set_lines(0, i, i, false, to_lines(s))
+end
+function jspy(key, filetype)
+	filetype = get_filetype(filetype)
+	ref = jspyref[filetype]
+	return ref and ref[key]
+end
+
+function vimeval(s)
+	-- timestamp
+	local aliases = {
+		timestamp = "tostring(os.time())",
+	}
+	local code = aliases[s] or s
+	return load(code)
+end
+function vt(s, o)
+	local function callback(capture)
+		local m = jspy(capture)
+		if exists(m) then
+			return m
+		end
+		m = vimeval(capture)
+		if exists(m) then
+			return m
+		end
+		m = o and o[capture]
+		if exists(m) then
+			return m
+		end
+	end
+	local r = "%$(%w+)"
+	return string.gsub(s, r, callback)
+end
+function set_bookmark()
+	local choices = { "fix", "todo", "problem" }
+	local function callback(label)
+		label = upper(label)
+		message = vt("$comment_delimiter$timestamp $label: ")
+		append(message)
+	end
+	local a = choose(choices, { label = "bookmark type", callback = callback })
+end
+noremap("<s-left", arrow_left)
+function implicit_anything_handler(arg)
+	local items = {
+		{
+			match = "github",
+			callback = clone,
+		},
+		{
+			match = "githubb",
+		},
+	}
+	local opts = imatch(arg, items)
+	local params = count_params(v.callback) - 1
+	local args = {}
+	local function callback(input)
+		push(args, input)
+	end
+
+	for i = 1, #params do
+		local m = vim.fn.printf("requesting arg %s", i)
+		prompt(m, callback)
+	end
+
+	args = map(args, to_string_argument)
+	pause(args)
+	status, result = pcall(opts.callback, unpack(args))
+	if status then
+		print(result)
+	end
+end
+
+function to_string_argument(s)
+	if is_number(s) then
+		return tonumber(s)
+	end
+	return doublequote(tostring(s))
+end
+function to_argument(s)
+	if is_number(s) then
+		return tonumber(s)
+	end
+	return tostring(s)
+end
+function imatch(arg, items)
+	for i, v in pairs(items) do
+		if test(arg, v.match) then
+			return v
+		end
+	end
+end
+function foobarasd(sadsad) end
+function prompt(message, callback)
+	vim.ui.input({ prompt = message }, function(input)
+		callback(input)
+	end)
+end
+function push(base, item)
+	if empty(item) then
+		return
+	end
+	table.insert(base, item)
+end
+-- implicit_anything_handler()
+-- see(vim.fn) -- lets you see what it has
+
+-- require("filetype")
+function fzf_query_directory(s)
+	local q =
+		[[find $(pwd) -regextype posix-extended -type f | grep -vE '(fonts|.git|node_modules|.log$|temp|package)']]
+	local actions = {
+		["default"] = require("fzf-lua").actions.file_edit,
+	}
+	require("fzf-lua").fzf_exec(q, { cwd = s, actions = actions })
+end
+function abc()
+	-- fzf(vim.g.state.files)
+end
+noremap("<leader>a", "fzf_query_directory", { args = "~/.config/nvim" })
+-- https://github.com/JoosepAlviste/dotfiles/tree/c171efbbbe0daa5e737250ec82338a51ed53c15a/config/nvim/lua/j
+
+local alphabet = { "a", "b", "c" }
+local function select(items, callback)
+	vim.ui.select(items, {}, callback)
+end
+
+local function regex_find_function(key)
+    vim.cmd(vim.fn.printf("normal! /^\\v(local )?function %s\\(/e\r", key))
+end
+function four()
+	local ids = collect_top_level_identifiers()
+	select(ids, regex_find_function)
+end
+noremap("4", four)
+
+noremap("<leader><leader>s", "<cmd> source /home/kdog3682/.config/nvim/lua/plugins/lsp.lua<cr>")
+
+local ls = require("luasnip")
+local s = ls.snippet
+local sn = ls.snippet_node
+local t = ls.text_node
+local i = ls.insert_node
+local f = ls.function_node
+local c = ls.choice_node
+local d = ls.dynamic_node
+local r = ls.restore_node
+
+local l = require("luasnip.extras").lambda
+local rep = require("luasnip.extras").rep
+local p = require("luasnip.extras").partial
+local m = require("luasnip.extras").match
+local n = require("luasnip.extras").nonempty
+local dl = require("luasnip.extras").dynamic_lambda
+local fmt = require("luasnip.extras.fmt").fmt
+local fmta = require("luasnip.extras.fmt").fmta
+local types = require("luasnip.util.types")
+local conds = require("luasnip.extras.conditions")
+local conds_expand = require("luasnip.extras.conditions.expand")
+local parser = ls.parser.parse_snippet
+
+function formatter(name, template, nodes)
+	return s(name, fmta(template, nodes))
+end
+
+function wrapf2(fn)
+    local function lambda(...)
+        return pcall(fn, unpack({...}))[2]
+    end
+    return lambda
+end
+function booga(s)
+    return "a"
+end
+
+function get_identifier_nodes_above_cursor()
+    local nodes = {}
+    local node = get_cursor_node()
+    pause(node:type())
+    local s = get_node_text(node)
+    pause(s)
+    return s
+end
+local snippets = {
+	formatter("x3", "<>\ndatetime: <>\nsubreddit: <>\ntitle: <>\nbody:\n<>", {
+        p(vimeval, "timestamp"),
+		t("aabbbbbbb"),
+		c(1, {
+            p(repeatstr, "-", 30),
+            p(repeatstr, "-", 50),
+			t("vim"),
+			t("neovim"),
+			t("askprogramming"),
+			t("learnjavascript"),
+			t("vuejs"),
+		}),
+		i(2),
+		i(0),
+	}),
+	formatter("abc", "abcde <> fgh", { t("ax1") }),
+}
+
+-- ls.add_snippets("lua", snippets)
+
+function get_node_info(root)
+    return {range = root:range(), text = get_node_text(root), type = root:type()}
+end
+local function get_identifier_nodes_above_cursor()
+    local root = get_root_node()
+
+    local cursor_pos = vim.api.nvim_win_get_cursor(0)
+    local cursor_node = root:named_descendant_for_range(cursor_pos[1] - 1, cursor_pos[2])
+    get_node_info(cursor_node)
+
+
+    local identifier_nodes = {}
+    local current_node = cursor_node
+    while current_node do
+        if current_node:type() == "identifier" then
+            table.insert(identifier_nodes, current_node)
+        end
+        current_node = current_node:parent()
+    end
+
+    for i, node in ipairs(identifier_nodes) do
+        local start_row, start_col, end_row, end_col = node:range()
+        local identifier_text = vim.treesitter.get_node_text(node, bufnr)
+        pause(string.format("Identifier %d: %s (%d, %d) - (%d, %d)", i, identifier_text, start_row + 1, start_col, end_row + 1, end_col))
+    end
+end
+
+-- get_identifier_nodes_above_cursor()
+vim.opt.modifiable = true
+
+function go_file_or_function()
+    local a = go_file()
+    if a then return end
+    if go_function() then return end
+    print("no file and no function")
+end
+function go_file()
+	local a = vim.fn.getline(".")
+    local pattern = "%b''"
+    local match = string.match(a, pattern)
+
+    if not match or len(match) < 5 then
+        pattern = '%b""'
+        match = string.match(a, pattern)
+    end
+    if not match or len(match) < 5 then
+        return false
+    end
+    if match then
+        match = string.sub(match, 2, -2)
+        pause(match)
+        if is_file(match) then
+            open_buffer(match)
+            return true
+        end
+    end
+    print('no file found in a string')
+
+end
+function go_function()
+	local w = vim.fn.expand("<cword>")
+	local a = vim.fn.getline(".")
+    if test(a, w .. "%(") then
+        regex_find_function(w)
+        return true
+    end
+end
+
+noremap('gf', go_file_or_function)
+local lazyrootpath = vim.fn.stdpath("data") .. "/lazy" -- directory where plugins will be installed
+local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
+local calc = "/home/kdog3682/.local/share/nvim/lazy/cmp-calc/lua/cmp_calc/init.lua"
+noremap("<leader><leader>r", reloader)
+
+local function evaluate(program)
+  local m = load('return ' .. program)
+  if type(m) ~= 'function' then
+    return false
+  end
+  local status, value = pcall(m)
+
+  if not status or type(value) ~= "number" then
+    return false
+  else
+    return tostring(value)
+    end
+end
+
+
+
+local cmp = require 'cmp'
+
+local NAME_REGEX = '\\%([^/\\\\:\\*?<>\'"`\\|]\\)'
+local PATH_REGEX = vim.regex(([[\%(\%(/PAT*[^/\\\\:\\*?<>\'"`\\| .~]\)\|\%(/\.\.\)\)*/\zePAT*$]]):gsub('PAT', NAME_REGEX))
+
+local source = {}
+
+local constants = {
+  max_lines = 20,
+}
+
+---@class cmp_path.Option
+---@field public trailing_slash boolean
+---@field public label_trailing_slash boolean
+---@field public get_cwd fun(): string
+
+---@type cmp_path.Option
+local defaults = {
+  trailing_slash = false,
+  label_trailing_slash = true,
+  get_cwd = function(params)
+    return vim.fn.expand(('#%d:p:h'):format(params.context.bufnr))
+  end,
+}
+
+source.new = function()
+  return setmetatable({}, { __index = source })
+end
+
+source.get_trigger_characters = function()
+  return { '.', ':' }
+end
+
+source.complete = function(self, params, callback)
+  local candidates = self:get(params)
+  return callback(candidates)
+end
+
+source.resolve = function(self, completion_item, callback)
+  callback(completion_item)
+end
+
+source.get = function(self, params, option)
+  local s = params.context.cursor_before_line
+  local offset = params.offset
+  local input = string.sub(s, offset - 1)
+  -- local prefix = string.sub(s, 1, offset - 1) -- includes the dot
+  local prefix = string.sub(s, 1, offset - 2) -- includes the dot
+  local name = "ggggggggg"
+  print(stringify({input = input, prefix = prefix, cursor_before_line = s}))
+   local item = {
+      label = name,
+      filterText = name,
+      insertText = name,
+      kind = cmp.lsp.CompletionItemKind.File,
+      data = {
+          booga = 123
+      },
+    }
+    return {item}
+end
+
+
+function generate_random_id(length)
+    local chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+    local id = ''
+    local random = math.random
+
+    for i = 1, length or 10 do
+        id = id .. chars:sub(random(1, #chars), 1)
+    end
+
+    return id
+end
+
+-- local handler = "a"
+-- cmp.register_source(handler, source.new())
+-- cmp.setup.filetype("lua", {
+--     sources = cmp.config.sources({
+--         {name = "luasnip"},
+--         {name = handler},
+--         {name = "buffer"},
+--     })
+-- })
+function visual_handler()
+    fooo()
+   -- gccasdf
+end
+function to_array(t)
+    if not t then return {}
+    elseif vim.tbl_islist(t) then
+        return t
+    end
+    return { t }
+end
+
+local function contains(types, target)
+    if not is_array(types) then
+        return types == target
+    end
+    for _, type in ipairs(types) do
+        if target == type then
+            return true
+        end
+    end
+    return false
+end
+
+function get_root_node2()
+    local ts_utils = require("nvim-treesitter.ts_utils") 
+    local root = ts_utils.get_node_at_cursor()
+    return root
+end
+
+function get_visual_selection_lines()
+  local start_pos = vim.fn.getpos("'<")
+  local end_pos = vim.fn.getpos("'>")
+
+  local start_line = start_pos[2]
+  local end_line = end_pos[2]
+
+  return {start_line, end_line}
+end
+
+function get_lines(a, b)
+    return vim.api.nvim_buf_get_lines(0, a, b, false)
+end
+function fooo()
+    local vstart = vim.fn.getpos("'<")
+    local vend = vim.fn.getpos("'>")
+    local line_start = vstart[2] 
+    local line_end = vend[2]
+    local p = vim.fn.getline(line_start, line_end)
+    if true then return print(stringify(p)) end
+
+-- or use api.nvim_buf_get_lines local lines = vim.fn.getline(line_start,line_end)
+
+
+    local a, b = unpack(get_visual_selection_lines())
+    local lines = get_lines(a, b + 1)
+    append_file(vim.g.temp_file, lines)
+
+    if true then return end
+    local root = get_cursor_node()
+        --local next = root:prev_sibling
+    print(stringify(get_node_info(root)))
+
+
+    if true then
+        return end
+    while root:parent() do
+        root = root:parent()
+    end
+    -- DFS through the tree and find all nodes that have the given type
+    local stack = { root }
+    local nodes, selections_list = {}, {}
+    while #stack > 0 do
+        local cur = stack[#stack]
+        -- If the current node's type matches the target type, process it
+        if is_any_of(cur:type(), node_types) then
+            -- Add the current node to the stack
+            nodes[#nodes + 1] = cur
+            -- Compute the node's selection and add it to the list
+            local range = { ts_utils.get_vim_range({ cur:range() }) }
+            selections_list[#selections_list + 1] = {
+                left = {
+                    first_pos = { range[1], range[2] },
+                },
+                right = {
+                    last_pos = { range[3], range[4] },
+                },
+            }
+        end
+        -- Pop off of the stack
+        stack[#stack] = nil
+        -- Add the current node's children to the stack
+        for child in cur:iter_children() do
+            stack[#stack + 1] = child
+        end
+    end
+end
+function vnoremap(k, v)
+    vim.keymap.set('v', k, vim.fn.printf(":'<,'> lua %s()<CR>", v))
+end
+
+function get_decl_node()
+    local start = get_far_left_node()
+    return start
+end
+
+function get_indent()
+    local s = vim.fn.line('.')
+    local indent_level = vim.fn.indent(s)
+    return indent_level
+end
+function create_snippet(s)
+    return snippet
+end
+function getvis()
+    local vstart = vim.fn.getpos("'<")
+    local vend = vim.fn.getpos("'>")
+    return {start, vend}
+end
+
+function uncomment(s)
+    
+end
+function add_snippet()
+    local s = uncomment(vim.fn.line('.'))
+    local key = vim.fn.input("snippet key?")
+    local ls = require("luasnip")
+    local snippet = ls.parser.parse_snippet(key, expr)
+    local ft = get_filetype()
+    ls.add_snippets(ft, {
+        snippet
+    })
+end
+function print_node(node)
+    pause(stringify(get_node_info(node)))
+end
+function get_far_right_node()
+	local cursor = vim.api.nvim_win_get_cursor(0)
+	local left_of_cursor_range = { cursor[1] - 1, start }
+	local node = vim.treesitter.get_node({ pos = left_of_cursor_range })
+	return node
+end
+function get_far_left_node()
+	local cursor = vim.api.nvim_win_get_cursor(0)
+	local left_of_cursor_range = { cursor[1] - 1, get_indent() + 1 }
+	local node = vim.treesitter.get_node({ pos = left_of_cursor_range })
+	return node
+end
+
+function foo()
+    local my_query = [[
+        ((function_definition
+        name: (identifier) @function)
+        (#set! "type" "$name"))
+    ]]
+    vim.treesitter.query.add_query('lua', 'my-query', my_query)
+
+    local node = get_root_node()
+    for _, match in ipairs(node) do
+        print(get_node_text(match))
+    end
+end
+
+function foo_asdfads_bar()
+   local aaaa = 1
+   return 123
+end
+function get_cmd_history()
+  local cmd_history = vim.split(vim.cmdline, '\n')
+  return cmd_history
+end
+function clear_cmd_history()
+    vim.opt.cmdline = ""
+end
+
+function parse_query(s)
+    return vim.treesitter.query.parse_query("lua", s)
+end
+function do_query(query, node)
+    local query = parse_query(query)
+    for _, matches, _ in ipairs(query:iter_matches(node), 0) do
+        local return_type = vim.treesitter.query.get_node_text(matches[1], 0)
+        local name = vim.treesitter.query.get_node_text(matches[2], 0)
+        local param_node = matches[3]
+        local param_info = {}
+
+        for param in param_node:iter_children() do
+            if param:type() == "formal_parameter" then
+                table.insert(param_info, {
+                    type = vim.treesitter.query.get_node_text(param:field("type")[1], 0),
+                    name = vim.treesitter.query.get_node_text(param:field("name")[1], 0),
+                })
+            end
+        end
+
+        return {
+            return_type = return_type,
+            name = name,
+            param_info = param_info,
+            start_line = method_node:start(),
+        }
+    end
+end
+vnoremap('v', 'visual_handler')
+noremap('1', 'one', {lua = true})
+
+function get_identifier_node_left_of_cursor()
+	local cursor = vim.api.nvim_win_get_cursor(0)
+    local row = cursor[1] - 1
+    local col = get_indent()
+    pause("hI")
+
+    local c = 0
+    while c < 10 do
+        c = c + 1
+        local node = vim.treesitter.get_node({ pos = {row, col} })
+        if node:type() == "block" then
+            col = col + 1
+        else
+            local cccc = 0
+            print_node(node)
+            return pause(find_child_node(node, "identifier"))
+        end
+    end
+    return 'error: no node found'
+end
+
+
+function prepare_text_input(s)
+    return sub(s, "\n", "\\n")
+end
+function abc()
+	local a = vim.fn.system('ls ~/LOREMDIR')
+    a = prepare_text_input(a)
+    print(a)
+end
+function get_identifier()
+    return fli("^function (%w+)")
+end
+function run_lua_function_with_identifier()
+    local arg = get_identifier()
+    run_lua_function(arg)
+end
+noremap("2", "get_identifier", {lua = true})
+noremap("1", run_lua_function_with_identifier)
+
+-- print(vim.fn.match("abc", "%a"))
+
+function redirector(cmd)
+    -- Redirect the output of `:highlight` to the temporary file
+    local tmp_file = "/home/kdog3682/del.txt"
+    vim.cmd("redir! > " .. tmp_file)
+    vim.cmd("silent " .. cmd)
+    vim.cmd("redir END")
+end
+
+
+function remove_items(sources, targets)
+    for i = #sources, 1, -1 do
+        if contains(targets, sources[i]) then
+            table.remove(sources, i)
+        end
+    end
+    return sources
 end

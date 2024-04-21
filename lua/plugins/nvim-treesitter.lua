@@ -1,6 +1,6 @@
 function config()
 	require("nvim-treesitter.configs").setup({
-		ensure_installed = { "lua", "vim", "typst", "javascript", "vue", "typescript" },
+		ensure_installed = { "lua", "typst", "javascript", "vue", "typescript" },
 		sync_install = false,
 		auto_install = false,
 		ignore_install = {},

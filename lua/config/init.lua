@@ -74,8 +74,8 @@ require("lazy").setup({
 
 local modules = {
 	"config.options",
-	"snippets.lua",
 	"config.autocmds",
+	-- "snippets.lua",
     -- "config.more.lua",
     -- "config.more.snippets",
     -- "config.snippets.lua",
@@ -83,14 +83,6 @@ local modules = {
     -- "config.more.lua",
     -- "config.keymaps",
     -- "config.more.keymaps",
-}
-
-local languages = {
-    "lua",
-    "typst",
-    "vue",
-    "javascript",
-    "typescript",
 }
 
 for _, mod in ipairs(modules) do
@@ -102,3 +94,12 @@ end
 
 local M = require("stdlib.meta")
 M.remove_bracket_mappings()
+
+local languages = {
+    "lua",
+    "typst",
+    "vue",
+    "javascript",
+    "typescript",
+}
+
